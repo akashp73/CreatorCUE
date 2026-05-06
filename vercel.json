@@ -1,0 +1,12 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "src": "frontend",
+      "framework": "vite"
+    },
+    "backend": {
+      "src": "backend",
+      "framework": "express"
+    }
+  }
+}
