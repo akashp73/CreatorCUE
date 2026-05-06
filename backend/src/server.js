@@ -10,7 +10,7 @@ app.set("trust proxy", 1);
 
 // Security middleware
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: "*", credentials: false }));
 app.use(express.json());
 
 // Rate limiter: 100 req/min per IP
