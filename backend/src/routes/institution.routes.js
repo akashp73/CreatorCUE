@@ -1,0 +1,16 @@
+const r = require('express').Router();
+const { authenticate, requireRole } = require('../middleware/auth.middleware');
+const multer = require('multer');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const c = require('../controllers/institution.controller');
+const storage = multer.diskStorage({ destination: process.env.UPLOAD_DIR || './uploads', filename: (_, f, cb) => cb(null, `logo_${uuidv4()}${path.extname(f.originalname)}`) });
+const upload = multer({ storage, fileFilter: (_, f, cb) => cb(null, /image/.test(f.mimetype)) });
+r.get('/branding', c.getBranding);
+r.use(authenticate);
+r.put('/branding', c.updateBranding);
+r.post('/upload-logo', upload.single('logo'), c.uploadLogo);
+r.get('/team', c.getTeam);
+r.post('/team', c.createTeamMember);
+r.put('/team/:id', c.updateTeamMember);
+module.exports = r;

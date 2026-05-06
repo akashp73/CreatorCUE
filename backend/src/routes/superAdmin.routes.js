@@ -1,0 +1,11 @@
+const r = require('express').Router();
+const { loginSuperAdmin, requireSuperAdmin } = require('../middleware/superAdmin.middleware');
+const c = require('../controllers/superAdmin.controller');
+r.post('/auth/login', loginSuperAdmin);
+r.use(requireSuperAdmin);
+r.get('/institutions', c.listInstitutions);
+r.post('/institutions', c.createInstitution);
+r.put('/institutions/:id', c.updateInstitution);
+r.get('/institutions/:id/usage', c.getInstitutionUsage);
+r.get('/revenue', c.getRevenue);
+module.exports = r;

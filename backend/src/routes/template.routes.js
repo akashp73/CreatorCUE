@@ -1,0 +1,12 @@
+const r = require('express').Router();
+const { authenticate } = require('../middleware/auth.middleware');
+const c = require('../controllers/template.controller');
+r.use(authenticate);
+r.get('/email', c.getEmailTemplates);
+r.post('/email', c.createEmailTemplate);
+r.put('/email/:id', c.updateEmailTemplate);
+r.delete('/email/:id', c.deleteEmailTemplate);
+r.get('/whatsapp', c.getWaTemplates);
+r.post('/whatsapp', c.createWaTemplate);
+r.put('/whatsapp/:id', c.updateWaTemplate);
+module.exports = r;

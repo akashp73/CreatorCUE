@@ -1,0 +1,15 @@
+const r = require('express').Router();
+const multer = require('multer');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const c = require('../controllers/portal.controller');
+const storage = multer.diskStorage({ destination: process.env.UPLOAD_DIR || './uploads', filename: (_, f, cb) => cb(null, `${uuidv4()}${path.extname(f.originalname)}`) });
+const upload = multer({ storage });
+r.post('/auth/login', c.portalLogin);
+r.get('/invite/:token', c.validateInvite);
+r.post('/register', c.register);
+r.get('/my-application', c.requirePortal, c.getMyApplication);
+r.get('/my-payments', c.requirePortal, c.getMyPayments);
+r.get('/my-documents', c.requirePortal, c.getMyDocuments);
+r.post('/my-documents', c.requirePortal, upload.single('file'), c.uploadMyDocument);
+module.exports = r;

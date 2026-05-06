@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "EduCRM",
+    "slug": "educrm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": { "backgroundColor": "#1B2B4B" },
+    "platforms": ["android"],
+    "android": {
+      "package": "com.yourbrand.educrm",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1B2B4B"
+      },
+      "permissions": ["CALL_PHONE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"]
+    },
+    "plugins": ["expo-notifications", "expo-secure-store"],
+    "extra": { "eas": { "projectId": "your-project-id" } }
+  }
+}

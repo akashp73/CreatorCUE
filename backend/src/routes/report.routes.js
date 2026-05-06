@@ -1,0 +1,10 @@
+const r = require('express').Router();
+const { authenticate } = require('../middleware/auth.middleware');
+const c = require('../controllers/report.controller');
+r.use(authenticate);
+r.get('/overview', c.overview);
+r.get('/agent-performance', c.agentPerformance);
+r.get('/funnel', c.funnel);
+r.get('/source-roi', c.sourceRoi);
+r.get('/export', c.exportReport);
+module.exports = r;
