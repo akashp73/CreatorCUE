@@ -22,14 +22,15 @@ import BrandingPage from './pages/settings/BrandingPage'
 import WebhooksPage from './pages/settings/WebhooksPage'
 import AssignmentPage from './pages/settings/AssignmentPage'
 import BillingPage from './pages/BillingPage'
+import WhatsAppCampaignsPage from './pages/WhatsAppCampaignsPage'
 import PortalApp from './pages/portal/PortalApp'
 import SuperAdminApp from './pages/super/SuperAdminApp'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-bg">
-      <div className="animate-spin rounded-full h-10 w-10 border-4 border-navy border-t-transparent" />
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f172a' }}>
+      <div className="animate-spin rounded-full h-10 w-10 border-2" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
     </div>
   )
   return user ? children : <Navigate to="/login" replace />
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/hot-leads" element={<HotLeadsPage />} />
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
+              <Route path="/whatsapp-campaigns" element={<WhatsAppCampaignsPage />} />
               <Route path="/automations" element={<AutomationsPage />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reports" element={<ReportsPage />} />

@@ -1,177 +1,307 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'
-import { Users, Flame, CheckSquare, TrendingUp, Phone, ArrowUpRight, AlertTriangle } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
+import {
+  Users, Flame, Phone, IndianRupee, ArrowUpRight, CheckSquare,
+  TrendingUp, Clock, Award, ChevronRight, AlertTriangle,
+} from 'lucide-react'
 import { dashboardApi, reportsApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import StatCard from '../components/StatCard'
 import ScoreBadge from '../components/ScoreBadge'
 import Spinner from '../components/Spinner'
 
-const STATUS_COLORS = { NEW:'#3182CE', CONTACTED:'#38A169', APPLIED:'#6366f1', QUALIFIED:'#4f46e5', ENROLLED:'#38A169', LOST:'#E53E3E' }
-const SOURCE_COLORS = ['#0f172a','#4f46e5','#3182CE','#38A169','#E53E3E','#6366f1']
+const STAGES = ['NEW', 'COUNSELLING', 'APPLIED', 'PAYMENT_PENDING', 'ENROLLED']
+const STAGE_LABELS = { NEW: 'New', COUNSELLING: 'Counselling', APPLIED: 'Applied', PAYMENT_PENDING: 'Pmt Pending', ENROLLED: 'Enrolled' }
+const STAGE_COLORS = ['#6366f1', '#f59e0b', '#3b82f6', '#f97316', '#10b981']
+
+function PipelineFunnel({ pipeline, onStageClick }) {
+  const total = Object.values(pipeline).reduce((s, v) => s + v, 0) || 1
+  return (
+    <div className="space-y-2">
+      {STAGES.map((stage, i) => {
+        const count = pipeline[stage] || 0
+        const pct = Math.round((count / total) * 100)
+        const color = STAGE_COLORS[i]
+        return (
+          <button
+            key={stage}
+            onClick={() => onStageClick(stage)}
+            className="w-full text-left group"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold" style={{ color }}>{STAGE_LABELS[stage]}</span>
+              <span className="text-xs font-bold" style={{ color: '#f1f5f9' }}>{count}</span>
+            </div>
+            <div className="h-7 rounded-lg overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <div
+                className="h-full rounded-lg transition-all duration-500 flex items-center px-3"
+                style={{
+                  width: `${Math.max(pct, 4)}%`,
+                  background: `linear-gradient(90deg, ${color}40, ${color}80)`,
+                  border: `1px solid ${color}40`,
+                }}
+              >
+                <span className="text-xs font-semibold text-white">{pct}%</span>
+              </div>
+              <div className="absolute inset-y-0 right-3 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <ChevronRight size={12} style={{ color }} />
+              </div>
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function TaskFeedItem({ task }) {
+  const isOverdue = new Date(task.due_at) < new Date()
+  return (
+    <Link to={`/leads/${task.lead?.id}`} className="flex items-start gap-3 py-2.5 hover:bg-white/5 -mx-2 px-2 rounded-lg transition-colors">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+        style={{ background: isOverdue ? 'rgba(239,68,68,0.15)' : 'rgba(99,102,241,0.15)', color: isOverdue ? '#f87171' : '#a5b4fc' }}>
+        {task.lead?.name?.[0]?.toUpperCase() || '?'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate" style={{ color: '#f1f5f9' }}>{task.title}</p>
+        <p className="text-xs truncate" style={{ color: '#94a3b8' }}>{task.lead?.name}</p>
+      </div>
+      <span className={`text-xs font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${isOverdue ? 'text-red-400 bg-red-500/10' : 'text-amber-400 bg-amber-500/10'}`}>
+        {isOverdue ? 'Overdue' : new Date(task.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </span>
+    </Link>
+  )
+}
+
+function LeaderboardRow({ user, rank, period }) {
+  const medals = ['🥇', '🥈', '🥉']
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b last:border-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+      <span className="text-base w-6 text-center flex-shrink-0">{medals[rank] || `#${rank + 1}`}</span>
+      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+        style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
+        {user.name?.[0]?.toUpperCase()}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate" style={{ color: '#f1f5f9' }}>{user.name}</p>
+        <p className="text-xs" style={{ color: '#94a3b8' }}>{user.call_count} calls · {user.talk_time}min</p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className="text-base font-black" style={{ color: '#10b981' }}>{user.conversions}</p>
+        <p className="text-xs" style={{ color: '#475569' }}>converted</p>
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const isManager = useAuthStore(s => s.isManagerOrAdmin())
+  const [lbPeriod, setLbPeriod] = useState('today')
+  const [pipelineStage, setPipelineStage] = useState(null)
+
   const { data: stats, isLoading: sl } = useQuery({ queryKey: ['dash-stats'], queryFn: () => dashboardApi.getStats().then(r => r.data) })
   const { data: hotLeads = [], isLoading: hl } = useQuery({ queryKey: ['hot-leads'], queryFn: () => dashboardApi.getHotLeads().then(r => r.data) })
-  const { data: agents = [] } = useQuery({ queryKey: ['agent-perf'], queryFn: () => reportsApi.agentPerf({}).then(r => r.data), enabled: isManager })
-  const { data: reengageLeads = [] } = useQuery({ queryKey: ['reengagement'], queryFn: () => dashboardApi.getReengagement().then(r => r.data) })
+  const { data: todayTasks = [] } = useQuery({ queryKey: ['today-tasks'], queryFn: () => dashboardApi.getTodayTasks().then(r => r.data), retry: false })
+  const { data: leaderboard = [] } = useQuery({ queryKey: ['leaderboard', lbPeriod], queryFn: () => dashboardApi.getTeamLeaderboard(lbPeriod).then(r => r.data), enabled: isManager, retry: false })
+  const { data: pipelineLeads = [] } = useQuery({ queryKey: ['pipeline-leads', pipelineStage], queryFn: () => dashboardApi.getPipelineLeads(pipelineStage).then(r => r.data), enabled: !!pipelineStage, retry: false })
 
   if (sl) return <Spinner />
 
+  const pipeline = stats?.pipeline || {}
   const bySource = stats?.leads_by_source ? Object.entries(stats.leads_by_source).map(([name, value]) => ({ name, value })) : []
-  const byStatus = stats?.leads_by_status ? Object.entries(stats.leads_by_status).map(([name, value]) => ({ name, value })) : []
+
+  const sectionTitle = (text) => (
+    <h3 className="text-sm font-bold mb-4" style={{ color: '#f1f5f9' }}>{text}</h3>
+  )
 
   return (
     <div className="space-y-6">
-      {/* Re-engagement alert */}
-      {stats?.reengagement_leads > 0 && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-800">
-              {stats.reengagement_leads} lead{stats.reengagement_leads > 1 ? 's' : ''} need re-engagement
-            </p>
-            <p className="text-xs text-amber-600 mt-0.5">No activity in 7+ days. Follow-up tasks are created daily at 9am.</p>
-          </div>
-          <Link to="/tasks" className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex-shrink-0 underline">View Tasks</Link>
-        </div>
-      )}
-
-      {/* Stat cards */}
+      {/* Top Row — Quick Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Total Leads" value={stats?.total_leads} color="#4f46e5" to="/leads" />
-        <StatCard icon={Flame} label="Hot Leads" value={stats?.hot_leads} color="#E53E3E" sub="Score > 80" to="/hot-leads" />
-        <StatCard icon={CheckSquare} label="Tasks Due Today" value={stats?.tasks_due_today} color="#f59e0b" to="/tasks" />
-        <StatCard icon={TrendingUp} label="Enrolled This Month" value={stats?.enrolled_this_month} color="#38A169" />
+        <StatCard icon={Users} label="New Leads Today" value={stats?.new_leads_today} color="#6366f1" glow="blue" to="/leads" />
+        <StatCard icon={Phone} label="Calls Made Today" value={stats?.calls_today} color="#10b981" glow="green" />
+        <StatCard icon={Flame} label="Hot Leads" value={stats?.hot_leads} color="#ef4444" glow="red" to="/hot-leads" />
+        <StatCard icon={IndianRupee} label="Enrolled This Month" value={stats?.enrolled_this_month} color="#f59e0b" glow="gold" />
       </div>
 
-      {/* Charts row */}
+      {/* Middle Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Active Pipeline Funnel */}
         <div className="lg:col-span-2 card">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Leads by Source <span className="text-xs font-normal text-gray-400">(Last 30 days)</span></h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={bySource}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }} />
-              <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+          {sectionTitle('Active Enrollment Pipeline')}
+          <PipelineFunnel pipeline={pipeline} onStageClick={s => setPipelineStage(s === pipelineStage ? null : s)} />
+
+          {/* Pipeline drill-down */}
+          {pipelineStage && (
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold" style={{ color: '#94a3b8' }}>
+                  {STAGE_LABELS[pipelineStage]} — {pipelineLeads.length} leads
+                </p>
+                <button onClick={() => setPipelineStage(null)} className="text-xs" style={{ color: '#6366f1' }}>Clear</button>
+              </div>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {pipelineLeads.map(lead => (
+                  <Link key={lead.id} to={`/leads/${lead.id}`}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
+                      {lead.name?.[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-sm flex-1 truncate" style={{ color: '#f1f5f9' }}>{lead.name}</span>
+                    <span className="text-xs" style={{ color: '#94a3b8' }}>{lead.course_interested || lead.source}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right sidebar — Task Feed */}
+        <div className="card">
+          {sectionTitle('Today\'s Tasks')}
+          {todayTasks.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckSquare size={32} style={{ color: '#334155', margin: '0 auto 8px' }} />
+              <p className="text-sm" style={{ color: '#475569' }}>All clear for today</p>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {todayTasks.map(task => <TaskFeedItem key={task.id} task={task} />)}
+            </div>
+          )}
+          <Link to="/tasks" className="flex items-center justify-center gap-1 mt-4 text-xs font-semibold py-2 rounded-lg transition-colors hover:bg-white/5"
+            style={{ color: '#6366f1' }}>
+            View all tasks <ArrowUpRight size={11} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Charts + Hot Leads Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Leads by Source Chart */}
+        <div className="lg:col-span-2 card">
+          {sectionTitle('Leads by Source')}
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={bySource} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12, color: '#f1f5f9' }}
+                cursor={{ fill: 'rgba(99,102,241,0.05)' }}
+              />
+              <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="card">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Leads by Status</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={byStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value" paddingAngle={2}>
-                {byStatus.map((e, i) => <Cell key={e.name} fill={STATUS_COLORS[e.name] || SOURCE_COLORS[i % 6]} />)}
-              </Pie>
-              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12 }} />
-              <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      {/* Hot leads table */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-700">🔥 Top Hot Leads</h3>
-          <Link to="/hot-leads" className="text-xs font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#4f46e5' }}>
-            View all <ArrowUpRight size={12} />
-          </Link>
-        </div>
-        {hl ? <Spinner size={6} /> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-2.5 font-medium">Name</th>
-                  <th className="text-left py-2.5 font-medium">Score</th>
-                  <th className="text-left py-2.5 font-medium">Course</th>
-                  <th className="text-left py-2.5 font-medium">Phone</th>
-                  <th className="text-left py-2.5 font-medium">Call</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hotLeads.slice(0, 5).map(lead => (
-                  <tr key={lead.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
-                    <td className="py-2.5">
-                      <Link to={`/leads/${lead.id}`} className="font-medium text-gray-800 hover:text-indigo-600 transition-colors">{lead.name}</Link>
-                    </td>
-                    <td className="py-2.5"><ScoreBadge score={lead.activity_score} label={lead.score_label} /></td>
-                    <td className="py-2.5 text-gray-500 text-xs">{lead.course_interested || '—'}</td>
-                    <td className="py-2.5 text-gray-500 text-xs">{lead.phone}</td>
-                    <td className="py-2.5">
-                      <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium">
-                        <Phone size={12} /> Call
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-                {hotLeads.length === 0 && (
-                  <tr><td colSpan={5} className="py-8 text-center text-gray-400 text-sm">No hot leads yet</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Re-engagement leads list */}
-      {reengageLeads.length > 0 && (
+        {/* Top Hot Leads */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <AlertTriangle size={15} className="text-amber-500" /> Needs Re-engagement
-            </h3>
-            <Link to="/leads" className="text-xs font-medium text-indigo-600 hover:opacity-80">View all</Link>
+            {sectionTitle('Hot Leads')}
+            <Link to="/hot-leads" className="text-xs font-semibold flex items-center gap-1 -mt-4" style={{ color: '#6366f1' }}>
+              All <ArrowUpRight size={10} />
+            </Link>
           </div>
-          <div className="space-y-2">
-            {reengageLeads.slice(0, 5).map(lead => {
-              const daysInactive = Math.floor((Date.now() - new Date(lead.last_activity_at).getTime()) / 86400000)
-              return (
-                <div key={lead.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold flex-shrink-0">
+          {hl ? <Spinner size={5} /> : (
+            <div className="space-y-2">
+              {hotLeads.slice(0, 5).map(lead => (
+                <Link key={lead.id} to={`/leads/${lead.id}`}
+                  className="flex items-center gap-2 py-2 hover:bg-white/5 -mx-1 px-1 rounded-lg transition-colors">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
                     {lead.name?.[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/leads/${lead.id}`} className="text-sm font-medium text-gray-800 hover:text-indigo-600 transition-colors">{lead.name}</Link>
-                    <p className="text-xs text-gray-400">{lead.course_interested || lead.source} · {lead.assignee?.name || 'Unassigned'}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: '#f1f5f9' }}>{lead.name}</p>
+                    <p className="text-xs truncate" style={{ color: '#94a3b8' }}>{lead.course_interested || '—'}</p>
                   </div>
-                  <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">{daysInactive}d inactive</span>
-                </div>
-              )
-            })}
+                  <ScoreBadge score={lead.activity_score} label={lead.score_label} />
+                </Link>
+              ))}
+              {hotLeads.length === 0 && <p className="text-sm text-center py-4" style={{ color: '#475569' }}>No hot leads</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Re-engagement alert */}
+      {stats?.reengagement_leads > 0 && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold" style={{ color: '#fbbf24' }}>
+              {stats.reengagement_leads} lead{stats.reengagement_leads > 1 ? 's' : ''} need re-engagement
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#92400e' }}>No activity in 7+ days.</p>
           </div>
+          <Link to="/tasks" className="text-xs font-bold flex-shrink-0 underline" style={{ color: '#f59e0b' }}>View Tasks</Link>
         </div>
       )}
 
-      {/* Agent leaderboard (ADMIN/MANAGER only) */}
-      {isManager && agents.length > 0 && (
+      {/* Team Leaderboard (ADMIN/MANAGER only) */}
+      {isManager && (
         <div className="card">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">🏆 Agent Leaderboard</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {agents.slice(0, 3).map((a, i) => (
-              <div
-                key={a.id}
-                className="rounded-xl p-4 text-center border transition-shadow hover:shadow-sm"
-                style={{
-                  borderColor: i === 0 ? '#4f46e5' : '#E5E7EB',
-                  backgroundColor: i === 0 ? '#eef2ff' : '#FAFAFA',
-                }}
-              >
-                <p className="text-2xl mb-1">{['🥇', '🥈', '🥉'][i]}</p>
-                <p className="font-semibold text-gray-800 text-sm">{a.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{a.leads_assigned} leads</p>
-                <p className="text-xl font-bold mt-2" style={{ color: i === 0 ? '#4f46e5' : '#0f172a' }}>{a.conversion_rate}%</p>
-                <p className="text-xs text-gray-400">conversion</p>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold" style={{ color: '#f1f5f9' }}>
+              <Award size={15} className="inline mr-2" style={{ color: '#f59e0b' }} />
+              Team Leaderboard
+            </h3>
+            <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              {['today', 'week', 'month'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => setLbPeriod(p)}
+                  className="px-3 py-1 rounded-md text-xs font-semibold capitalize transition-all"
+                  style={lbPeriod === p
+                    ? { background: '#6366f1', color: 'white' }
+                    : { color: '#94a3b8' }
+                  }
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: '#475569' }}>No data for this period</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {leaderboard.slice(0, 6).map((user, i) => (
+                <div key={user.id} className="rounded-xl p-4 transition-all"
+                  style={{
+                    background: i === 0 ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${i === 0 ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                  }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">{['🥇','🥈','🥉'][i] || `#${i+1}`}</span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#f1f5f9' }}>{user.name}</p>
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>{user.role}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="text-center">
+                      <p className="text-lg font-black" style={{ color: '#10b981' }}>{user.conversions}</p>
+                      <p className="text-xs" style={{ color: '#475569' }}>Converted</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-black" style={{ color: '#6366f1' }}>{user.call_count}</p>
+                      <p className="text-xs" style={{ color: '#475569' }}>Calls</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-black" style={{ color: '#f59e0b' }}>{user.talk_time}m</p>
+                      <p className="text-xs" style={{ color: '#475569' }}>Talk Time</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

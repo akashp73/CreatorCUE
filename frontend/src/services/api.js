@@ -49,6 +49,8 @@ export const leadsApi = {
   update: (id, d) => api.put(`/leads/${id}`, d),
   delete: (id) => api.delete(`/leads/${id}`),
   assign: (id, uid) => api.put(`/leads/${id}/assign`, { assigned_to: uid }),
+  setEnrollmentStage: (id, stage) => api.put(`/leads/${id}/enrollment-stage`, { stage }),
+  toggleVerify: (id) => api.put(`/leads/${id}/verify`),
   bulkImport: (file) => { const f = new FormData(); f.append('file', file); return api.post('/leads/bulk-import', f) },
   exportCsv: (p) => api.get('/leads/export', { params: p, responseType: 'blob' }),
   inviteToPortal: (id) => api.post(`/leads/${id}/invite-to-portal`),
@@ -77,6 +79,9 @@ export const dashboardApi = {
   getStats: () => api.get('/dashboard/stats'),
   getHotLeads: () => api.get('/dashboard/hot-leads'),
   getReengagement: () => api.get('/dashboard/reengagement'),
+  getPipelineLeads: (stage) => api.get('/dashboard/pipeline', { params: stage ? { stage } : {} }),
+  getTeamLeaderboard: (period) => api.get('/dashboard/team-leaderboard', { params: { period } }),
+  getTodayTasks: () => api.get('/dashboard/today-tasks'),
 }
 
 // ── Communications ────────────────────────────────────────────
@@ -166,9 +171,11 @@ export const billingApi = {
 
 // ── Team ──────────────────────────────────────────────────────
 export const teamApi = {
-  getAll: () => api.get('/institution/team'),
+  getAll: () => api.get('/team'),
   create: (d) => api.post('/institution/team', d),
   update: (id, d) => api.put(`/institution/team/${id}`, d),
+  updateStatus: (id, status) => api.put(`/team/${id}/status`, { status }),
+  getBreaks: (id) => api.get(`/team/${id}/breaks`),
 }
 
 // ── Branding ──────────────────────────────────────────────────

@@ -1,0 +1,67 @@
+const r = require('express').Router();
+const { authenticate } = require('../middleware/auth.middleware');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+r.use(authenticate);
+
+// Get all team members with today stats
+r.get('/', async (req, res) => {
+  try {
+    const iid = req.user.institution_id;
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const users = await prisma.user.findMany({
+      where: { institution_id: iid, is_active: true },
+      select: { id: true, name: true, email: true, role: true, status: true, created_at: true },
+    });
+
+    const withStats = await Promise.all(users.map(async (u) => {
+      const [calls_today, leads_contacted, conversions, activeBreak] = await Promise.all([
+        prisma.callLog.count({ where: { user_id: u.id, called_at: { gte: todayStart } } }),
+        prisma.callLog.findMany({
+          where: { user_id: u.id, called_at: { gte: todayStart } },
+          select: { lead_id: true }, distinct: ['lead_id'],
+        }),
+        prisma.lead.count({ where: { assigned_to: u.id, status: 'ENROLLED', updated_at: { gte: todayStart } } }),
+        prisma.breakLog.findFirst({ where: { user_id: u.id, end_at: null }, orderBy: { start_at: 'desc' } }),
+      ]);
+      return { ...u, calls_today, leads_contacted: leads_contacted.length, conversions, on_break: !!activeBreak, break_start: activeBreak?.start_at || null };
+    }));
+
+    res.json(withStats);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Update user status
+r.put('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const VALID = ['ACTIVE', 'ON_BREAK', 'IN_MEETING', 'OFFLINE'];
+    if (!VALID.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    const user = await prisma.user.update({ where: { id: req.params.id }, data: { status } });
+
+    if (status === 'ON_BREAK') {
+      await prisma.breakLog.create({ data: { user_id: req.params.id } });
+    } else {
+      const activeBreak = await prisma.breakLog.findFirst({ where: { user_id: req.params.id, end_at: null } });
+      if (activeBreak) await prisma.breakLog.update({ where: { id: activeBreak.id }, data: { end_at: new Date() } });
+    }
+    res.json(user);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get break logs for a user
+r.get('/:id/breaks', async (req, res) => {
+  try {
+    const logs = await prisma.breakLog.findMany({
+      where: { user_id: req.params.id },
+      orderBy: { start_at: 'desc' },
+      take: 20,
+    });
+    res.json(logs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = r;

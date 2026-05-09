@@ -2,18 +2,23 @@ import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   RefreshControl, ActivityIndicator, Linking, Alert,
-  Modal, TextInput,
+  Modal, TextInput, StatusBar,
 } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
-import apiDefault, { dashboardApi, leadsApi } from '../services/api'
+import apiDefault, { dashboardApi, leadsApi, callsApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 
-const NAVY   = '#0f172a'
-const ACCENT = '#4f46e5'
-const BG     = '#f8fafc'
+const BG      = '#0f172a'
+const SURFACE = 'rgba(255,255,255,0.06)'
+const BORDER  = 'rgba(255,255,255,0.1)'
+const ACCENT  = '#6366f1'
+const SUCCESS = '#10b981'
+const DANGER  = '#ef4444'
+const GOLD    = '#f59e0b'
+const TEXT    = '#f1f5f9'
+const MUTED   = '#94a3b8'
 
-// ── Quick Add Lead Modal ───────────────────────────────────────
 function AddLeadModal({ visible, onClose, onAdded }) {
   const [form, setForm] = useState({ name: '', phone: '', course_interested: '', source: 'WEBSITE' })
   const [saving, setSaving] = useState(false)
@@ -36,7 +41,7 @@ function AddLeadModal({ visible, onClose, onAdded }) {
       <View style={m.root}>
         <View style={m.header}>
           <Text style={m.title}>New Lead</Text>
-          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color="#64748b" /></TouchableOpacity>
+          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={MUTED} /></TouchableOpacity>
         </View>
         <ScrollView style={m.body} contentContainerStyle={{ gap: 14 }}>
           {[
@@ -51,7 +56,7 @@ function AddLeadModal({ visible, onClose, onAdded }) {
                 value={form[f.key]}
                 onChangeText={v => setForm(p => ({ ...p, [f.key]: v }))}
                 placeholder={f.placeholder}
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor="#475569"
                 keyboardType={f.keyboardType || 'default'}
               />
             </View>
@@ -70,27 +75,43 @@ function AddLeadModal({ visible, onClose, onAdded }) {
   )
 }
 
-// ── Stat Card ─────────────────────────────────────────────────
-function StatCard({ iconName, label, value, color, loading }) {
+function BigStat({ icon, value, label, color, glow, loading, badge }) {
   return (
-    <View style={[s.statCard, { borderLeftColor: color, borderLeftWidth: 3 }]}>
-      <View style={[s.statIcon, { backgroundColor: color + '18' }]}>
-        <Ionicons name={iconName} size={20} color={color} />
+    <View style={[bs.card, { borderColor: color + '40', shadowColor: color, shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: 0 }, elevation: 8 }]}>
+      <View style={[bs.iconWrap, { backgroundColor: color + '18' }]}>
+        <Ionicons name={icon} size={28} color={color} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={s.statLabel}>{label}</Text>
-        {loading
-          ? <ActivityIndicator size="small" color={color} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
-          : <Text style={[s.statValue, { color }]}>{value ?? '—'}</Text>
-        }
-      </View>
+      {loading
+        ? <ActivityIndicator size="large" color={color} style={{ marginVertical: 8 }} />
+        : <Text style={[bs.value, { color }]}>{value ?? '—'}</Text>
+      }
+      <Text style={bs.label}>{label}</Text>
+      {badge && (
+        <View style={[bs.badge, { backgroundColor: DANGER + '20' }]}>
+          <Text style={[bs.badgeText, { color: DANGER }]}>{badge}</Text>
+        </View>
+      )}
     </View>
   )
 }
 
-// ── Recent Lead Row ───────────────────────────────────────────
+function QuickActionBtn({ icon, label, color, onPress }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[qa.btn, { backgroundColor: color + '18', borderColor: color + '30' }]}
+    >
+      <Ionicons name={icon} size={20} color={color} />
+      <Text style={[qa.label, { color }]}>{label}</Text>
+    </TouchableOpacity>
+  )
+}
+
 function RecentLeadRow({ lead, onPress }) {
-  const scoreColor = lead.score_label === 'HOT' ? '#ef4444' : lead.score_label === 'WARM' ? '#f59e0b' : '#3b82f6'
+  const scoreColor = lead.score_label === 'HOT' ? DANGER : lead.score_label === 'WARM' ? GOLD : ACCENT
+  const stageColors = { NEW: ACCENT, COUNSELLING: GOLD, APPLIED: '#3b82f6', PAYMENT_PENDING: '#f97316', ENROLLED: SUCCESS }
+  const stageColor = stageColors[lead.enrollment_stage] || ACCENT
   return (
     <TouchableOpacity style={s.recentRow} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.avatar, { backgroundColor: ACCENT + '18' }]}>
@@ -98,19 +119,21 @@ function RecentLeadRow({ lead, onPress }) {
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.recentName} numberOfLines={1}>{lead.name}</Text>
-        <Text style={s.recentSub} numberOfLines={1}>{lead.course_interested || lead.source} · {lead.status}</Text>
+        <Text style={s.recentSub} numberOfLines={1}>{lead.course_interested || lead.source}</Text>
       </View>
-      <View style={[s.scorePill, { backgroundColor: scoreColor + '18' }]}>
-        <Text style={[s.scoreText, { color: scoreColor }]}>{lead.activity_score}</Text>
+      <View style={{ alignItems: 'flex-end', gap: 3 }}>
+        <View style={[s.scorePill, { backgroundColor: scoreColor + '18' }]}>
+          <Text style={[s.scoreText, { color: scoreColor }]}>{lead.activity_score}</Text>
+        </View>
+        <Text style={{ fontSize: 9, color: stageColor, fontWeight: '700' }}>{lead.enrollment_stage || 'NEW'}</Text>
       </View>
       <TouchableOpacity onPress={() => Linking.openURL(`tel:${lead.phone}`)} style={s.callMini}>
-        <Ionicons name="call-outline" size={16} color={ACCENT} />
+        <Ionicons name="call-outline" size={16} color={SUCCESS} />
       </TouchableOpacity>
     </TouchableOpacity>
   )
 }
 
-// ── Main Screen ───────────────────────────────────────────────
 export default function DashboardScreen({ navigation }) {
   const user = useAuthStore(s => s.user)
   const qc = useQueryClient()
@@ -125,8 +148,13 @@ export default function DashboardScreen({ navigation }) {
     queryKey: ['mob-recent-leads'],
     queryFn: () => leadsApi.getAll({ page: 1, limit: 6 }).then(r => r.data),
   })
+  const { data: todayReport } = useQuery({
+    queryKey: ['mob-today-calls'],
+    queryFn: () => callsApi.today().then(r => r.data),
+  })
 
   const recentLeads = recentData?.leads || recentData?.data || []
+  const overdueCount = (todayReport?.pending_calls || 0)
 
   const onRefresh = async () => {
     setRefreshing(true)
@@ -138,15 +166,10 @@ export default function DashboardScreen({ navigation }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = user?.name?.split(' ')[0] || 'there'
 
-  const STATS = [
-    { iconName: 'people-outline',    label: 'Total Leads',    value: stats?.total_leads,         color: ACCENT },
-    { iconName: 'flame-outline',     label: 'Hot Leads',      value: stats?.hot_leads,            color: '#ef4444' },
-    { iconName: 'checkmark-circle-outline', label: 'Tasks Today', value: stats?.tasks_due_today, color: '#f59e0b' },
-    { iconName: 'trending-up-outline', label: 'Enrolled',     value: stats?.enrolled_this_month, color: '#10b981' },
-  ]
-
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      <StatusBar barStyle="light-content" backgroundColor={BG} />
+
       <AddLeadModal
         visible={showAddLead}
         onClose={() => setShowAddLead(false)}
@@ -160,37 +183,52 @@ export default function DashboardScreen({ navigation }) {
       >
         {/* Header */}
         <View style={s.header}>
-          <View style={s.headerLogoRow}>
+          <View style={s.headerRow}>
             <View style={s.logoMark}>
-              <Ionicons name="school-outline" size={18} color="#ffffff" />
+              <Ionicons name="school-outline" size={16} color="#ffffff" />
             </View>
-            <Text style={s.headerBrand}>EduCRM</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.greeting}>{greeting}, {firstName}</Text>
+              <Text style={s.date}>{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('CallSettings')} style={s.headerBtn}>
+              <Ionicons name="settings-outline" size={18} color={MUTED} />
+            </TouchableOpacity>
           </View>
-          <Text style={s.greeting}>{greeting}, {firstName}</Text>
-          <Text style={s.headerDate}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
         </View>
 
-        {/* Stats */}
-        <View style={s.statsGrid}>
-          {STATS.map(c => (
-            <StatCard key={c.label} {...c} loading={sl} />
-          ))}
+        {/* 3 BIG NUMBERS */}
+        <View style={s.bigStatsGrid}>
+          <BigStat
+            icon="call-outline"
+            value={stats?.tasks_due_today ?? '—'}
+            label="Pending Calls"
+            color={overdueCount > 0 ? DANGER : ACCENT}
+            loading={sl}
+            badge={overdueCount > 0 ? `${overdueCount} overdue` : null}
+          />
+          <BigStat
+            icon="people-outline"
+            value={stats?.new_leads_today ?? '—'}
+            label="Leads to Contact"
+            color="#3b82f6"
+            loading={sl}
+          />
+          <BigStat
+            icon="trophy-outline"
+            value={stats?.enrolled_this_month ?? '—'}
+            label="My Conversions"
+            color={SUCCESS}
+            loading={sl}
+          />
         </View>
 
-        {/* Quick actions */}
-        <View style={s.actionsRow}>
-          <TouchableOpacity style={[s.actionBtn, { backgroundColor: ACCENT }]} onPress={() => setShowAddLead(true)} activeOpacity={0.85}>
-            <Ionicons name="person-add-outline" size={18} color="white" />
-            <Text style={s.actionBtnText}>New Lead</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.actionBtn, { backgroundColor: NAVY }]} onPress={() => navigation.navigate('My Leads')} activeOpacity={0.85}>
-            <Ionicons name="call-outline" size={18} color="white" />
-            <Text style={s.actionBtnText}>My Leads</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#ef4444' }]} onPress={() => navigation.navigate('Hot Leads')} activeOpacity={0.85}>
-            <Ionicons name="flame-outline" size={18} color="white" />
-            <Text style={s.actionBtnText}>Hot Leads</Text>
-          </TouchableOpacity>
+        {/* Quick Actions */}
+        <View style={s.quickActions}>
+          <QuickActionBtn icon="person-add-outline" label="New Lead" color={ACCENT} onPress={() => setShowAddLead(true)} />
+          <QuickActionBtn icon="call-outline" label="My Leads" color="#3b82f6" onPress={() => navigation.navigate('My Leads')} />
+          <QuickActionBtn icon="flame-outline" label="Hot Leads" color={DANGER} onPress={() => navigation.navigate('Hot Leads')} />
+          <QuickActionBtn icon="document-text-outline" label="My Report" color={GOLD} onPress={() => navigation.navigate('DailyReport')} />
         </View>
 
         {/* Recent Leads */}
@@ -206,7 +244,7 @@ export default function DashboardScreen({ navigation }) {
             <ActivityIndicator size="small" color={ACCENT} style={{ paddingVertical: 20 }} />
           ) : recentLeads.length === 0 ? (
             <View style={s.emptyBox}>
-              <Ionicons name="people-outline" size={36} color="#cbd5e1" />
+              <Ionicons name="people-outline" size={36} color="#334155" />
               <Text style={s.emptyText}>No leads yet</Text>
             </View>
           ) : (
@@ -227,52 +265,60 @@ export default function DashboardScreen({ navigation }) {
   )
 }
 
-// ── Styles ─────────────────────────────────────────────────────
+// Styles
 const s = StyleSheet.create({
   root:          { flex: 1, backgroundColor: BG },
-  content:       { paddingBottom: 24 },
-  header:        { backgroundColor: NAVY, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 24 },
-  headerLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  logoMark:      { width: 28, height: 28, borderRadius: 8, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  headerBrand:   { fontSize: 14, fontWeight: '700', color: '#94a3b8', letterSpacing: 0.5 },
-  greeting:      { fontSize: 22, fontWeight: '800', color: '#ffffff' },
-  headerDate:    { fontSize: 13, color: '#64748b', marginTop: 2 },
-  statsGrid:     { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
-  statCard:      { backgroundColor: '#ffffff', borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
-  statIcon:      { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  statLabel:     { fontSize: 11, color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-  statValue:     { fontSize: 24, fontWeight: '800', marginTop: 2 },
-  actionsRow:    { flexDirection: 'row', paddingHorizontal: 16, marginTop: 14, gap: 8 },
-  actionBtn:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 12, paddingVertical: 12 },
-  actionBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
+  content:       { paddingBottom: 32 },
+  header:        { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20, backgroundColor: 'rgba(255,255,255,0.03)' },
+  headerRow:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoMark:      { width: 32, height: 32, borderRadius: 10, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  greeting:      { fontSize: 20, fontWeight: '800', color: TEXT },
+  date:          { fontSize: 12, color: MUTED, marginTop: 1 },
+  headerBtn:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER },
+  bigStatsGrid:  { flexDirection: 'row', paddingHorizontal: 16, marginTop: 20, gap: 10 },
+  quickActions:  { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 16, gap: 8 },
   section:       { paddingHorizontal: 16, marginTop: 20 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle:  { fontSize: 16, fontWeight: '700', color: NAVY },
+  sectionTitle:  { fontSize: 16, fontWeight: '700', color: TEXT },
   sectionLink:   { fontSize: 13, color: ACCENT, fontWeight: '600' },
-  card:          { backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
+  card:          { backgroundColor: SURFACE, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: BORDER },
   recentRow:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
-  rowDivider:    { borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  rowDivider:    { borderTopWidth: 1, borderTopColor: BORDER },
   avatar:        { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   avatarText:    { fontSize: 15, fontWeight: '700' },
-  recentName:    { fontSize: 14, fontWeight: '600', color: '#0f172a' },
-  recentSub:     { fontSize: 12, color: '#64748b', marginTop: 1 },
+  recentName:    { fontSize: 14, fontWeight: '600', color: TEXT },
+  recentSub:     { fontSize: 12, color: MUTED, marginTop: 1 },
   scorePill:     { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   scoreText:     { fontSize: 12, fontWeight: '800' },
   callMini:      { padding: 6 },
-  emptyBox:      { backgroundColor: '#ffffff', borderRadius: 16, alignItems: 'center', paddingVertical: 32, elevation: 1 },
-  emptyText:     { fontSize: 14, color: '#94a3b8', marginTop: 8 },
+  emptyBox:      { backgroundColor: SURFACE, borderRadius: 16, alignItems: 'center', paddingVertical: 32, borderWidth: 1, borderColor: BORDER },
+  emptyText:     { fontSize: 14, color: MUTED, marginTop: 8 },
+})
+
+const bs = StyleSheet.create({
+  card:   { flex: 1, borderRadius: 20, padding: 14, alignItems: 'center', backgroundColor: SURFACE, borderWidth: 1, minHeight: 140 },
+  iconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  value:  { fontSize: 32, fontWeight: '900', marginBottom: 4 },
+  label:  { fontSize: 10, color: MUTED, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
+  badge:  { marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  badgeText: { fontSize: 10, fontWeight: '700' },
+})
+
+const qa = StyleSheet.create({
+  btn:   { flex: 1, minWidth: '45%', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1 },
+  label: { fontSize: 13, fontWeight: '700' },
 })
 
 const m = StyleSheet.create({
-  root:      { flex: 1, backgroundColor: BG },
-  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#e2e8f0', backgroundColor: '#ffffff' },
-  title:     { fontSize: 17, fontWeight: '700', color: NAVY },
+  root:      { flex: 1, backgroundColor: '#1e293b' },
+  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: BORDER },
+  title:     { fontSize: 17, fontWeight: '700', color: TEXT },
   body:      { flex: 1, padding: 20 },
-  label:     { fontSize: 11, fontWeight: '700', color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 },
-  input:     { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 14, color: NAVY, backgroundColor: '#ffffff' },
-  footer:    { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: '#e2e8f0', backgroundColor: '#ffffff' },
-  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' },
-  cancelText:{ fontSize: 14, fontWeight: '600', color: '#64748b' },
+  label:     { fontSize: 11, fontWeight: '700', color: MUTED, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 },
+  input:     { borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 14, color: TEXT, backgroundColor: SURFACE },
+  footer:    { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: BORDER },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: BORDER, alignItems: 'center' },
+  cancelText:{ fontSize: 14, fontWeight: '600', color: MUTED },
   saveBtn:   { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: ACCENT, alignItems: 'center' },
   saveText:  { fontSize: 14, fontWeight: '700', color: '#ffffff' },
 })

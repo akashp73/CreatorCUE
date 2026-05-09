@@ -5,4 +5,7 @@ r.use(authenticate);
 r.get('/stats', c.getStats);
 r.get('/hot-leads', c.getHotLeads);
 r.get('/reengagement', c.getReengagementLeads);
+r.get('/pipeline', c.getPipelineLeads);
+r.get('/team-leaderboard', c.getTeamLeaderboard);
+r.get('/today-tasks', c.getTodayTasks);
 module.exports = r;

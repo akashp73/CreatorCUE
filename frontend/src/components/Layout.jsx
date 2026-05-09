@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Flame, CheckSquare, Megaphone,
   Zap, IndianRupee, BarChart2, Settings, CreditCard,
   LogOut, Menu, X, GraduationCap, ChevronDown, ChevronRight,
-  Bell,
+  Bell, MessageSquare,
 } from 'lucide-react'
 
 const NAV = [
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/hot-leads', icon: Flame, label: 'Hot Leads' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { to: '/campaigns', icon: Megaphone, label: 'Campaigns' },
+  { to: '/whatsapp-campaigns', icon: MessageSquare, label: 'WhatsApp' },
   { to: '/automations', icon: Zap, label: 'Automations' },
   { to: '/payments', icon: IndianRupee, label: 'Payments' },
   { to: '/reports', icon: BarChart2, label: 'Reports' },
@@ -26,7 +27,7 @@ const SETTINGS_NAV = [
   { to: '/settings/scoring', label: 'Score Rules' },
   { to: '/settings/email-templates', label: 'Email Templates' },
   { to: '/settings/whatsapp-templates', label: 'WhatsApp Templates' },
-  { to: '/settings/users', label: 'Users' },
+  { to: '/settings/users', label: 'Team' },
   { to: '/settings/branding', label: 'Branding' },
   { to: '/settings/assignment', label: 'Lead Assignment' },
   { to: '/settings/webhooks', label: 'Webhooks & API' },
@@ -53,15 +54,15 @@ function NavItem({ to, icon: Icon, label, exact, onClick }) {
       end={exact}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
           isActive
-            ? 'text-white shadow-sm'
-            : 'text-slate-400 hover:text-white hover:bg-white/8'
+            ? 'text-white bg-white/10 border border-white/15 shadow-lg'
+            : 'text-slate-400 hover:text-white hover:bg-white/6'
         }`
       }
-      style={({ isActive }) => isActive ? { backgroundColor: '#4f46e5' } : {}}
+      style={({ isActive }) => isActive ? { boxShadow: '0 0 20px rgba(99,102,241,0.2)' } : {}}
     >
-      <Icon size={17} />
+      <Icon size={16} />
       <span>{label}</span>
     </NavLink>
   )
@@ -71,9 +72,7 @@ function Sidebar({ mobile = false, onClose }) {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
-  const [settingsOpen, setSettingsOpen] = useState(
-    location.pathname.startsWith('/settings')
-  )
+  const [settingsOpen, setSettingsOpen] = useState(location.pathname.startsWith('/settings'))
 
   const { data: branding } = useQuery({
     queryKey: ['branding'],
@@ -91,16 +90,19 @@ function Sidebar({ mobile = false, onClose }) {
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ backgroundColor: '#0f172a', width: 240 }}>
+    <div className="flex flex-col h-full" style={{
+      background: 'rgba(15, 23, 42, 0.95)',
+      backdropFilter: 'blur(20px)',
+      borderRight: '1px solid rgba(255,255,255,0.08)',
+      width: 240,
+    }}>
       {/* Logo / Branding */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: '#ffffff12' }}>
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-          style={{ backgroundColor: '#4f46e5' }}
-        >
+      <div className="flex items-center gap-3 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
           {logoSrc
             ? <img src={logoSrc} alt="Logo" className="w-full h-full object-cover" onError={(e) => { e.target.style.display='none' }} />
-            : <GraduationCap size={20} className="text-white" />
+            : <GraduationCap size={18} className="text-white" />
           }
         </div>
         <div className="flex-1 min-w-0">
@@ -124,14 +126,14 @@ function Sidebar({ mobile = false, onClose }) {
         <div className="pt-1">
           <button
             onClick={() => setSettingsOpen(o => !o)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/8 transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/6 transition-all"
           >
-            <Settings size={17} />
+            <Settings size={16} />
             <span className="flex-1 text-left">Settings</span>
-            {settingsOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            {settingsOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </button>
           {settingsOpen && (
-            <div className="ml-8 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: '#ffffff15' }}>
+            <div className="ml-7 mt-0.5 space-y-0.5 border-l pl-3" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               {SETTINGS_NAV.map((item) => (
                 <NavLink
                   key={item.to}
@@ -139,7 +141,7 @@ function Sidebar({ mobile = false, onClose }) {
                   onClick={mobile ? onClose : undefined}
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                      isActive ? 'text-white bg-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/8'
+                      isActive ? 'text-white bg-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/6'
                     }`
                   }
                 >
@@ -152,12 +154,10 @@ function Sidebar({ mobile = false, onClose }) {
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-4 border-t" style={{ borderColor: '#ffffff12' }}>
+      <div className="px-4 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-            style={{ backgroundColor: '#4f46e5' }}
-          >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             {user?.name?.[0]?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -166,11 +166,7 @@ function Sidebar({ mobile = false, onClose }) {
               {user?.role}
             </span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-slate-500 hover:text-red-400 transition-colors"
-            title="Logout"
-          >
+          <button onClick={handleLogout} className="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
             <LogOut size={15} />
           </button>
         </div>
@@ -179,24 +175,23 @@ function Sidebar({ mobile = false, onClose }) {
   )
 }
 
+const PAGE_TITLES = {
+  '/': 'Dashboard', '/leads': 'Leads', '/hot-leads': 'Hot Leads',
+  '/tasks': 'Tasks', '/campaigns': 'Campaigns', '/whatsapp-campaigns': 'WhatsApp Campaigns',
+  '/automations': 'Automations', '/payments': 'Payments', '/reports': 'Reports', '/billing': 'Billing & Plans',
+  '/settings/scoring': 'Score Rules', '/settings/email-templates': 'Email Templates',
+  '/settings/whatsapp-templates': 'WhatsApp Templates',
+  '/settings/users': 'Team', '/settings/branding': 'Branding',
+  '/settings/assignment': 'Lead Assignment', '/settings/webhooks': 'Webhooks & API',
+}
+
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-
-  const PAGE_TITLES = {
-    '/': 'Dashboard', '/leads': 'Leads', '/hot-leads': 'Hot Leads',
-    '/tasks': 'Tasks', '/campaigns': 'Campaigns', '/automations': 'Automations',
-    '/payments': 'Payments', '/reports': 'Reports', '/billing': 'Billing & Plans',
-    '/settings/scoring': 'Score Rules', '/settings/email-templates': 'Email Templates',
-    '/settings/whatsapp-templates': 'WhatsApp Templates',
-    '/settings/users': 'Team Users', '/settings/branding': 'Branding',
-    '/settings/assignment': 'Lead Assignment',
-    '/settings/webhooks': 'Webhooks & API',
-  }
   const title = PAGE_TITLES[location.pathname] || 'EduCRM'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg">
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#0f172a' }}>
       {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
         <Sidebar />
@@ -205,7 +200,7 @@ export default function Layout({ children }) {
       {/* Mobile sidebar */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="relative h-full">
             <Sidebar mobile onClose={() => setMobileOpen(false)} />
           </div>
@@ -215,13 +210,19 @@ export default function Layout({ children }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="flex-shrink-0 bg-white border-b border-gray-100 px-4 lg:px-6 h-14 flex items-center gap-4 shadow-sm">
-          <button className="lg:hidden text-gray-500 hover:text-gray-700" onClick={() => setMobileOpen(true)}>
+        <header className="flex-shrink-0 px-4 lg:px-6 h-14 flex items-center gap-4"
+          style={{
+            background: 'rgba(15,23,42,0.8)',
+            backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+          }}>
+          <button className="lg:hidden text-slate-400 hover:text-white" onClick={() => setMobileOpen(true)}>
             <Menu size={22} />
           </button>
-          <h1 className="text-base font-semibold text-gray-900 flex-1 tracking-tight">{title}</h1>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all relative">
-            <Bell size={18} />
+          <h1 className="text-base font-semibold text-white flex-1 tracking-tight">{title}</h1>
+          <button className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-white transition-all relative"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <Bell size={16} />
           </button>
         </header>
 

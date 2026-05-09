@@ -6,9 +6,11 @@ const STORAGE_KEY = 'educrm_call_settings'
 const defaults = {
   autoWhatsApp: false,
   cooldownDays: 7,
+  cooldown: 60,
+  template: 'Hi {name}! Following up from our call. Let me know if you have any questions about {course}.',
   whatsappTemplate: 'Hi {name}! Following up from our call. Let me know if you have any questions about {course}.',
-  cooldowns: {},      // { [phone]: timestamp }
-  pendingCall: null,  // { phone, leadId, leadName, course, startTime }
+  cooldowns: {},
+  pendingCall: null,
 }
 
 export const useCallStore = create((set, get) => ({
@@ -35,7 +37,8 @@ export const useCallStore = create((set, get) => ({
 
   setAutoWhatsApp: (v) => { set({ autoWhatsApp: v }); get()._persist() },
   setCooldownDays: (v) => { set({ cooldownDays: v }); get()._persist() },
-  setTemplate: (v) => { set({ whatsappTemplate: v }); get()._persist() },
+  setCooldown: (v) => { set({ cooldown: v }); get()._persist() },
+  setTemplate: (v) => { set({ template: v, whatsappTemplate: v }); get()._persist() },
 
   setPendingCall: (call) => set({ pendingCall: call }),
   clearPendingCall: () => set({ pendingCall: null }),

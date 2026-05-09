@@ -60,6 +60,7 @@ async function handleLeadCapture(req, res) {
   // Auto-assign
   const assigned_to = await getAutoAssignee(req.institution.id, resolvedCourse, city).catch(() => null);
 
+  const { enrollment_stage } = req.body;
   const lead = await prisma.lead.create({
     data: {
       institution_id: req.institution.id,
@@ -70,6 +71,7 @@ async function handleLeadCapture(req, res) {
       course_interested: resolvedCourse || null,
       source: resolvedSource,
       assigned_to: assigned_to || null,
+      enrollment_stage: enrollment_stage || 'NEW',
     },
   });
 

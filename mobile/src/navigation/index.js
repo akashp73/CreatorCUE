@@ -16,9 +16,10 @@ import CallSettingsScreen from '../screens/CallSettingsScreen'
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 
-const NAVY   = '#0f172a'
-const ACCENT = '#4f46e5'
-const GREY   = '#94a3b8'
+const BG     = '#0f172a'
+const ACCENT = '#6366f1'
+const MUTED  = '#475569'
+const ACTIVE = '#a5b4fc'
 
 function MainTabs() {
   return (
@@ -26,16 +27,16 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
+          backgroundColor: '#0f1a2b',
+          borderTopColor: 'rgba(255,255,255,0.08)',
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 4,
+          height: 64,
+          paddingBottom: 10,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: ACCENT,
-        tabBarInactiveTintColor: GREY,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarActiveTintColor: ACTIVE,
+        tabBarInactiveTintColor: MUTED,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
       }}
     >
       <Tab.Screen
@@ -53,18 +54,13 @@ function MainTabs() {
         component={HotLeadsScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Ionicons name="flame-outline" size={size} color={color} />,
-          tabBarActiveTintColor: '#ef4444',
+          tabBarActiveTintColor: '#f87171',
         }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
         options={{ tabBarIcon: ({ color, size }) => <Ionicons name="checkmark-circle-outline" size={size} color={color} /> }}
-      />
-      <Tab.Screen
-        name="My Report"
-        component={DailyReportScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" size={size} color={color} /> }}
       />
     </Tab.Navigator>
   )
@@ -79,29 +75,9 @@ export default function AppNavigator({ isAuthenticated }) {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="LeadDetail"
-              component={LeadDetailScreen}
-              options={{
-                headerShown: true,
-                headerStyle: { backgroundColor: NAVY },
-                headerTintColor: '#ffffff',
-                headerTitleStyle: { fontWeight: '700', fontSize: 16 },
-                headerBackTitleVisible: false,
-              }}
-            />
-            <Stack.Screen
-              name="CallSettings"
-              component={CallSettingsScreen}
-              options={{
-                headerShown: true,
-                title: 'Call Settings',
-                headerStyle: { backgroundColor: NAVY },
-                headerTintColor: '#ffffff',
-                headerTitleStyle: { fontWeight: '700', fontSize: 16 },
-                headerBackTitleVisible: false,
-              }}
-            />
+            <Stack.Screen name="LeadDetail" component={LeadDetailScreen} />
+            <Stack.Screen name="DailyReport" component={DailyReportScreen} />
+            <Stack.Screen name="CallSettings" component={CallSettingsScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -40,6 +40,29 @@ r.post('/:id/invite-to-portal', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Enrollment stage update
+r.put('/:id/enrollment-stage', async (req, res) => {
+  try {
+    const STAGES = ['NEW', 'COUNSELLING', 'APPLIED', 'PAYMENT_PENDING', 'ENROLLED'];
+    const { stage } = req.body;
+    if (!STAGES.includes(stage)) return res.status(400).json({ error: 'Invalid stage' });
+    const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const updated = await prisma.lead.update({ where: { id: req.params.id }, data: { enrollment_stage: stage } });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Toggle verification
+r.put('/:id/verify', async (req, res) => {
+  try {
+    const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const updated = await prisma.lead.update({ where: { id: req.params.id }, data: { is_verified: !lead.is_verified } });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 r.get('/:id/tasks', tc.getLeadTasks);
 r.get('/:id/notes', nc.getLeadNotes);
 r.get('/:id/communications', cc.getLeadComms);

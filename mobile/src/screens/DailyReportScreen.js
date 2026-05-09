@@ -1,168 +1,213 @@
 import React, { useCallback } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Share, Linking, RefreshControl, ActivityIndicator,
+  Linking, RefreshControl, ActivityIndicator, StatusBar,
 } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { callsApi } from '../services/api'
 
-const NAVY   = '#0f172a'
-const ACCENT = '#4f46e5'
-const BG     = '#f8fafc'
+const BG      = '#0f172a'
+const SURFACE = 'rgba(255,255,255,0.06)'
+const BORDER  = 'rgba(255,255,255,0.1)'
+const ACCENT  = '#6366f1'
+const SUCCESS = '#10b981'
+const DANGER  = '#ef4444'
+const GOLD    = '#f59e0b'
+const WA_GREEN= '#25D366'
+const TEXT    = '#f1f5f9'
+const MUTED   = '#94a3b8'
 
-const STATS = [
-  { key: 'total_calls',     label: 'Total Calls',    icon: 'call-outline',             color: ACCENT },
-  { key: 'connected_calls', label: 'Connected',      icon: 'checkmark-circle-outline', color: '#10b981' },
-  { key: 'missed_calls',    label: 'Missed',         icon: 'close-circle-outline',     color: '#ef4444' },
-  { key: 'total_duration',  label: 'Duration (min)', icon: 'timer-outline',            color: '#f59e0b', suffix: ' min' },
-  { key: 'leads_converted', label: 'Converted',      icon: 'trending-up-outline',      color: '#10b981' },
-  { key: 'new_leads',       label: 'New Leads',      icon: 'person-add-outline',       color: ACCENT },
-  { key: 'whatsapp_sent',   label: 'WhatsApp Sent',  icon: 'logo-whatsapp',            color: '#25D366' },
+const STAT_CONFIG = [
+  { key: 'total_calls',     label: 'Calls Made',   icon: 'call-outline',             color: ACCENT },
+  { key: 'connected_calls', label: 'Connected',    icon: 'checkmark-circle-outline', color: SUCCESS },
+  { key: 'missed_calls',    label: 'Missed',       icon: 'close-circle-outline',     color: DANGER },
+  { key: 'total_duration',  label: 'Talk Time',    icon: 'timer-outline',            color: GOLD, suffix: 'min' },
+  { key: 'leads_converted', label: 'Converted',    icon: 'trophy-outline',           color: SUCCESS },
+  { key: 'new_leads',       label: 'New Leads',    icon: 'person-add-outline',       color: '#3b82f6' },
 ]
 
-function buildText(data) {
-  const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-  return [
-    `Daily Report — ${today}`,
-    '',
-    'Calls',
-    `Total: ${data.total_calls}`,
-    `Connected: ${data.connected_calls}`,
-    `Missed: ${data.missed_calls}`,
-    `Duration: ${data.total_duration} min`,
-    '',
-    'Leads',
-    `Converted: ${data.leads_converted}`,
-    `New: ${data.new_leads}`,
-    '',
-    `WhatsApp Sent: ${data.whatsapp_sent}`,
-    '',
-    '— EduCRM',
-  ].join('\n')
-}
-
-export default function DailyReportScreen({ navigation }) {
-  const { data, isLoading, refetch, isFetching, error } = useQuery({
-    queryKey: ['mob-daily-report'],
-    queryFn: () => callsApi.today().then(r => r.data),
-    refetchInterval: 60000,
-    retry: 1,
-  })
-
-  const handleShare = useCallback(async () => {
-    if (!data) return
-    try { await Share.share({ message: buildText(data) }) } catch {}
-  }, [data])
-
-  const handleWhatsApp = useCallback(() => {
-    if (!data) return
-    const text = encodeURIComponent(buildText(data))
-    Linking.openURL(`whatsapp://send?text=${text}`).catch(() =>
-      Linking.openURL(`https://wa.me/?text=${text}`)
-    )
-  }, [data])
-
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
-
+function StatTile({ iconName, label, value, color, suffix }) {
   return (
-    <ScrollView
-      style={dr.root}
-      contentContainerStyle={dr.container}
-      refreshControl={<RefreshControl refreshing={isFetching && !isLoading} onRefresh={refetch} tintColor={ACCENT} />}
-    >
-      {/* Header */}
-      <View style={dr.pageHeader}>
-        <View>
-          <Text style={dr.pageTitle}>Daily Report</Text>
-          <Text style={dr.pageDate}>{today}</Text>
-        </View>
-        <TouchableOpacity
-          style={dr.settingsBtn}
-          onPress={() => navigation.navigate('CallSettings')}
-        >
-          <Ionicons name="settings-outline" size={22} color="#64748b" />
-        </TouchableOpacity>
+    <View style={[st.tile, { borderColor: color + '30' }]}>
+      <View style={[st.iconWrap, { backgroundColor: color + '18' }]}>
+        <Ionicons name={iconName} size={22} color={color} />
       </View>
-
-      {isLoading ? (
-        <View style={dr.center}>
-          <ActivityIndicator size="large" color={ACCENT} />
-          <Text style={dr.loadingText}>Loading report...</Text>
-        </View>
-      ) : error ? (
-        <View style={dr.center}>
-          <Ionicons name="warning-outline" size={40} color="#ef4444" />
-          <Text style={dr.errorText}>Could not load report</Text>
-          <TouchableOpacity style={dr.retryBtn} onPress={refetch}>
-            <Text style={dr.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : data ? (
-        <>
-          {/* Stats grid */}
-          <View style={dr.grid}>
-            {STATS.map(({ key, label, icon, color, suffix = '' }) => (
-              <View key={key} style={dr.statCard}>
-                <View style={[dr.statIcon, { backgroundColor: color + '18' }]}>
-                  <Ionicons name={icon} size={20} color={color} />
-                </View>
-                <Text style={[dr.statValue, { color }]}>{data[key] ?? 0}{suffix}</Text>
-                <Text style={dr.statLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Actions */}
-          <View style={dr.actions}>
-            <TouchableOpacity style={[dr.actionBtn, { backgroundColor: NAVY }]} onPress={handleShare}>
-              <Ionicons name="share-social-outline" size={18} color="white" />
-              <Text style={dr.actionText}>Share Report</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[dr.actionBtn, { backgroundColor: '#25D366' }]} onPress={handleWhatsApp}>
-              <Ionicons name="logo-whatsapp" size={18} color="white" />
-              <Text style={dr.actionText}>Send WhatsApp</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Preview */}
-          <View style={dr.preview}>
-            <Text style={dr.previewLabel}>REPORT PREVIEW</Text>
-            <Text style={dr.previewText}>{buildText(data)}</Text>
-          </View>
-        </>
-      ) : (
-        <View style={dr.center}>
-          <Ionicons name="bar-chart-outline" size={48} color="#cbd5e1" />
-          <Text style={dr.emptyText}>No data yet. Log some calls first!</Text>
-        </View>
-      )}
-    </ScrollView>
+      <Text style={[st.value, { color }]}>{value ?? '—'}{suffix || ''}</Text>
+      <Text style={st.label}>{label}</Text>
+    </View>
   )
 }
 
-const dr = StyleSheet.create({
-  root:        { flex: 1, backgroundColor: BG },
-  container:   { padding: 16, paddingBottom: 40 },
-  pageHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  pageTitle:   { fontSize: 22, fontWeight: '800', color: NAVY },
-  pageDate:    { fontSize: 13, color: '#64748b', marginTop: 2 },
-  settingsBtn: { padding: 8, backgroundColor: '#ffffff', borderRadius: 10, elevation: 1 },
-  center:      { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  loadingText: { fontSize: 14, color: '#64748b', marginTop: 10 },
-  errorText:   { fontSize: 14, color: '#ef4444', marginTop: 10 },
-  emptyText:   { fontSize: 14, color: '#94a3b8', marginTop: 10, textAlign: 'center', maxWidth: 240 },
-  retryBtn:    { marginTop: 12, backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText:   { color: '#ffffff', fontWeight: '700' },
-  grid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  statCard:    { width: '47%', backgroundColor: '#ffffff', borderRadius: 16, padding: 14, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 3 },
-  statIcon:    { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  statValue:   { fontSize: 26, fontWeight: '800' },
-  statLabel:   { fontSize: 11, color: '#64748b', marginTop: 2, fontWeight: '600' },
-  actions:     { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  actionBtn:   { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
-  actionText:  { color: '#ffffff', fontWeight: '700', fontSize: 13 },
-  preview:     { backgroundColor: NAVY, borderRadius: 16, padding: 16 },
-  previewLabel:{ fontSize: 10, color: '#64748b', fontWeight: '700', letterSpacing: 1.5, marginBottom: 12, textTransform: 'uppercase' },
-  previewText: { fontSize: 13, color: '#94a3b8', lineHeight: 22, fontFamily: 'monospace' },
+export default function DailyReportScreen({ navigation }) {
+  const { data: report, isLoading, refetch } = useQuery({
+    queryKey: ['mob-daily-report'],
+    queryFn: () => callsApi.today().then(r => r.data),
+  })
+
+  const buildReportText = useCallback(() => {
+    if (!report) return ''
+    const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+    return `*My CRM Report — ${today}*\n\n` +
+      `Calls Made: ${report.total_calls || 0}\n` +
+      `Connected: ${report.connected_calls || 0}\n` +
+      `Missed: ${report.missed_calls || 0}\n` +
+      `Talk Time: ${report.total_duration || 0} min\n` +
+      `Leads Converted: ${report.leads_converted || 0}\n` +
+      `New Leads: ${report.new_leads || 0}\n\n` +
+      `Sent via EduCRM`
+  }, [report])
+
+  const shareViaWhatsApp = () => {
+    const msg = buildReportText()
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
+      alert('WhatsApp not installed. Share manually.')
+    })
+  }
+
+  const [refreshing, setRefreshing] = React.useState(false)
+  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false) }
+
+  const conversionRate = report?.total_calls > 0
+    ? Math.round((report.leads_converted / report.total_calls) * 100)
+    : 0
+
+  return (
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      <StatusBar barStyle="light-content" backgroundColor={BG} />
+
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={20} color={TEXT} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>My Daily Report</Text>
+          <Text style={s.headerSub}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+        </View>
+        <TouchableOpacity onPress={onRefresh} style={s.backBtn}>
+          <Ionicons name="refresh-outline" size={20} color={MUTED} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={s.root}
+        contentContainerStyle={s.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
+      >
+        {isLoading ? (
+          <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={ACCENT} />
+          </View>
+        ) : (
+          <>
+            {/* Conversion Rate Hero */}
+            <View style={s.heroCard}>
+              <Text style={s.heroLabel}>Conversion Rate</Text>
+              <Text style={[s.heroValue, { color: conversionRate > 20 ? SUCCESS : conversionRate > 10 ? GOLD : DANGER }]}>
+                {conversionRate}%
+              </Text>
+              <Text style={s.heroSub}>
+                {report?.leads_converted || 0} converted from {report?.total_calls || 0} calls
+              </Text>
+              <View style={s.rateBar}>
+                <View style={[s.rateBarFill, {
+                  width: `${Math.min(conversionRate, 100)}%`,
+                  backgroundColor: conversionRate > 20 ? SUCCESS : conversionRate > 10 ? GOLD : DANGER,
+                }]} />
+              </View>
+            </View>
+
+            {/* Stats Grid */}
+            <View style={s.statsGrid}>
+              {STAT_CONFIG.map(cfg => (
+                <StatTile
+                  key={cfg.key}
+                  iconName={cfg.icon}
+                  label={cfg.label}
+                  value={report?.[cfg.key] ?? 0}
+                  color={cfg.color}
+                  suffix={cfg.suffix}
+                />
+              ))}
+            </View>
+
+            {/* Call Breakdown */}
+            {report?.total_calls > 0 && (
+              <View style={s.card}>
+                <Text style={s.cardTitle}>Call Breakdown</Text>
+                {[
+                  { label: 'Connected', value: report?.connected_calls || 0, color: SUCCESS, key: 'connected' },
+                  { label: 'Missed', value: report?.missed_calls || 0, color: DANGER, key: 'missed' },
+                  { label: 'Callback', value: report?.callback_calls || 0, color: ACCENT, key: 'callback' },
+                  { label: 'Not Interested', value: report?.not_interested || 0, color: '#475569', key: 'not' },
+                ].map(row => {
+                  const pct = report?.total_calls > 0 ? Math.round((row.value / report.total_calls) * 100) : 0
+                  return (
+                    <View key={row.key} style={s.breakdownRow}>
+                      <Text style={[s.breakdownLabel, { color: row.color }]}>{row.label}</Text>
+                      <View style={s.breakdownBar}>
+                        <View style={[s.breakdownBarFill, { width: `${pct}%`, backgroundColor: row.color }]} />
+                      </View>
+                      <Text style={[s.breakdownVal, { color: row.color }]}>{row.value}</Text>
+                    </View>
+                  )
+                })}
+              </View>
+            )}
+
+            {/* Generate + Share */}
+            <View style={s.shareSection}>
+              <Text style={s.shareTitle}>Generate Report</Text>
+
+              <View style={s.reportPreview}>
+                <Text style={s.reportText}>{buildReportText()}</Text>
+              </View>
+
+              <TouchableOpacity style={s.whatsappBtn} onPress={shareViaWhatsApp}>
+                <Ionicons name="logo-whatsapp" size={20} color="white" />
+                <Text style={s.whatsappBtnText}>Share via WhatsApp</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
+  )
+}
+
+const s = StyleSheet.create({
+  root:            { flex: 1 },
+  content:         { padding: 16, paddingBottom: 32, gap: 14 },
+  header:          { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderBottomWidth: 1, borderBottomColor: BORDER },
+  backBtn:         { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER },
+  headerTitle:     { fontSize: 17, fontWeight: '800', color: TEXT },
+  headerSub:       { fontSize: 12, color: MUTED },
+  heroCard:        { backgroundColor: SURFACE, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: BORDER, alignItems: 'center' },
+  heroLabel:       { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
+  heroValue:       { fontSize: 56, fontWeight: '900', marginTop: 4 },
+  heroSub:         { fontSize: 13, color: MUTED, marginTop: 4 },
+  rateBar:         { width: '100%', height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 14, overflow: 'hidden' },
+  rateBarFill:     { height: '100%', borderRadius: 3 },
+  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  card:            { backgroundColor: SURFACE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER, gap: 12 },
+  cardTitle:       { fontSize: 12, fontWeight: '800', color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 },
+  breakdownRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  breakdownLabel:  { width: 100, fontSize: 12, fontWeight: '600' },
+  breakdownBar:    { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  breakdownBarFill:{ height: '100%', borderRadius: 3 },
+  breakdownVal:    { width: 30, fontSize: 13, fontWeight: '800', textAlign: 'right' },
+  shareSection:    { gap: 12 },
+  shareTitle:      { fontSize: 14, fontWeight: '800', color: TEXT },
+  reportPreview:   { backgroundColor: SURFACE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER },
+  reportText:      { fontSize: 12, color: MUTED, lineHeight: 20, fontFamily: 'monospace' },
+  whatsappBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 16, borderRadius: 16, backgroundColor: WA_GREEN },
+  whatsappBtnText: { fontSize: 15, fontWeight: '800', color: 'white' },
+})
+
+const st = StyleSheet.create({
+  tile:     { width: '47%', backgroundColor: SURFACE, borderRadius: 16, padding: 14, borderWidth: 1, alignItems: 'center', gap: 6 },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  value:    { fontSize: 28, fontWeight: '900' },
+  label:    { fontSize: 11, color: MUTED, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
 })

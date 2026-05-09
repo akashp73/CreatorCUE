@@ -18,6 +18,8 @@ const getLeads = async (req, res, next) => {
         { name: { contains: search } },
         { email: { contains: search } },
         { phone: { contains: search } },
+        { city: { contains: search } },
+        { course_interested: { contains: search } },
       ];
     }
     if (status) where.status = status;
@@ -30,6 +32,14 @@ const getLeads = async (req, res, next) => {
       where.activity_score = {};
       if (score_min) where.activity_score.gte = parseInt(score_min);
       if (score_max) where.activity_score.lte = parseInt(score_max);
+    }
+    const { enrollment_stage, is_verified, follow_up_before, follow_up_after } = req.query;
+    if (enrollment_stage) where.enrollment_stage = enrollment_stage;
+    if (is_verified !== undefined && is_verified !== '') where.is_verified = is_verified === 'true';
+    if (follow_up_before || follow_up_after) {
+      where.follow_up_date = {};
+      if (follow_up_after) where.follow_up_date.gte = new Date(follow_up_after);
+      if (follow_up_before) where.follow_up_date.lte = new Date(follow_up_before);
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -83,6 +93,7 @@ const createLead = async (req, res, next) => {
     const { name, email, phone, city, course_interested, source, assigned_to, status } = req.body;
     if (!name || !phone) return res.status(400).json({ error: 'name and phone are required' });
 
+    const { enrollment_stage, is_verified, follow_up_date } = req.body;
     const lead = await prisma.lead.create({
       data: {
         institution_id,
@@ -92,6 +103,9 @@ const createLead = async (req, res, next) => {
         source: source || 'OTHER',
         assigned_to: assigned_to || null,
         status: status || 'NEW',
+        enrollment_stage: enrollment_stage || 'NEW',
+        is_verified: is_verified || false,
+        follow_up_date: follow_up_date ? new Date(follow_up_date) : null,
       },
     });
 
@@ -124,7 +138,7 @@ const updateLead = async (req, res, next) => {
 
     const {
       name, email, phone, city, course_interested, source, assigned_to, status,
-      activity_score, score_label, portal_invited,
+      activity_score, score_label, portal_invited, enrollment_stage, is_verified, follow_up_date,
     } = req.body;
 
     const lead = await prisma.lead.update({
@@ -141,6 +155,9 @@ const updateLead = async (req, res, next) => {
         ...(activity_score !== undefined && { activity_score }),
         ...(score_label !== undefined && { score_label }),
         ...(portal_invited !== undefined && { portal_invited }),
+        ...(enrollment_stage !== undefined && { enrollment_stage }),
+        ...(is_verified !== undefined && { is_verified }),
+        ...(follow_up_date !== undefined && { follow_up_date: follow_up_date ? new Date(follow_up_date) : null }),
       },
     });
 

@@ -42,6 +42,8 @@ export const leadsApi = {
   getAll: (p) => api.get('/leads', { params: p }),
   getById: (id) => api.get(`/leads/${id}`),
   update: (id, d) => api.put(`/leads/${id}`, d),
+  setEnrollmentStage: (id, stage) => api.put(`/leads/${id}/enrollment-stage`, { stage }),
+  toggleVerify: (id) => api.put(`/leads/${id}/verify`),
   getTasks: (id) => api.get(`/leads/${id}/tasks`),
   getNotes: (id) => api.get(`/leads/${id}/notes`),
 }

@@ -25,23 +25,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#0f172a' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{
+      backgroundColor: '#0f172a',
+      backgroundImage: 'radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 20%, rgba(16,185,129,0.05) 0%, transparent 50%)',
+    }}>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: '#4f46e5' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 40px rgba(99,102,241,0.4)' }}>
             <GraduationCap size={32} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">EduCRM</h1>
-          <p className="text-slate-400 mt-1 text-sm">Education CRM Platform</p>
+          <h1 className="text-3xl font-black text-white">EduCRM</h1>
+          <p className="mt-1 text-sm" style={{ color: '#94a3b8' }}>Education CRM Platform</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to your account</h2>
+        <div className="rounded-2xl p-8" style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+          <h2 className="text-lg font-bold mb-6" style={{ color: '#f1f5f9' }}>Sign in to your account</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Email Address</label>
               <input
                 type="email" required value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
@@ -50,7 +54,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Password</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'} required value={form.password}
@@ -59,27 +63,27 @@ export default function LoginPage() {
                   className="input pr-10"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff size={16}/> : <Eye size={16}/>}
+                  className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#475569' }}>
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold text-white text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-60 mt-2 shadow-sm"
-              style={{ backgroundColor: '#4f46e5' }}>
-              {loading && <Loader2 size={16} className="animate-spin"/>}
+              className="w-full py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 mt-2"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}>
+              {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-5 p-3 bg-gray-50 rounded-xl text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600 mb-1">Demo Credentials</p>
-            <p>Admin: <span className="font-mono">admin@demo.com</span></p>
-            <p>Counsellor: <span className="font-mono">counsellor@demo.com</span></p>
-            <p>Password: <span className="font-mono">Demo@1234</span></p>
+          <div className="mt-5 p-3 rounded-xl text-xs space-y-0.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <p className="font-semibold mb-1" style={{ color: '#f1f5f9' }}>Demo Credentials</p>
+            <p style={{ color: '#94a3b8' }}>Admin: <span className="font-mono" style={{ color: '#a5b4fc' }}>admin@demo.com</span></p>
+            <p style={{ color: '#94a3b8' }}>Counsellor: <span className="font-mono" style={{ color: '#a5b4fc' }}>counsellor@demo.com</span></p>
+            <p style={{ color: '#94a3b8' }}>Password: <span className="font-mono" style={{ color: '#a5b4fc' }}>Demo@1234</span></p>
           </div>
         </div>
-        <p className="text-center text-slate-500 text-xs mt-6">© 2024 EduCRM · Education CRM Platform</p>
+        <p className="text-center text-xs mt-6" style={{ color: '#334155' }}>© 2024 EduCRM · Education CRM Platform</p>
       </div>
     </div>
   )
