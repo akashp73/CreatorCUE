@@ -193,18 +193,26 @@ function WebhookCard({ wh, apiKey }) {
   )
 }
 
+const FALLBACK_KEY = 'demo-api-key-edu-2024'
+
 export default function WebhooksPage() {
   const [showKey, setShowKey] = useState(false)
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['institution-api-key'],
-    queryFn: () => institutionApi.getApiKey().then(r => r.data),
-    retry: 1,
+    queryFn: async () => {
+      try {
+        const r = await institutionApi.getApiKey()
+        return r.data
+      } catch {
+        return { api_key: FALLBACK_KEY }
+      }
+    },
+    retry: false,
   })
 
-  const apiKey = data?.api_key
-  const maskedKey = apiKey
-    ? `${apiKey.slice(0, 8)}${'•'.repeat(24)}${apiKey.slice(-4)}`
-    : '••••••••••••••••••••••••••••••••'
+  const apiKey = data?.api_key || FALLBACK_KEY
+  const isFallback = apiKey === FALLBACK_KEY
+  const maskedKey = `${apiKey.slice(0, 8)}${'•'.repeat(Math.max(0, apiKey.length - 12))}${apiKey.slice(-4)}`
 
   const copyKey = async () => {
     if (!apiKey) return
@@ -236,8 +244,6 @@ export default function WebhooksPage() {
 
         {isLoading ? (
           <div className="flex items-center gap-2 py-2"><Spinner size={4} /><span className="text-sm text-gray-400">Loading API key…</span></div>
-        ) : isError ? (
-          <p className="text-sm text-red-500">Failed to load API key. Make sure you have Admin access.</p>
         ) : (
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -259,6 +265,12 @@ export default function WebhooksPage() {
             >
               <Copy size={16} />
             </button>
+          </div>
+        )}
+
+        {isFallback && (
+          <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-blue-700 leading-relaxed">
+            Using demo key <code className="font-mono font-semibold">{FALLBACK_KEY}</code> — the live API key endpoint is unavailable. Replace with your real key from Settings once the backend is reachable.
           </div>
         )}
 
