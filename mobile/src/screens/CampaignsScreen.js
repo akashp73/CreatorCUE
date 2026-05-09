@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, RefreshControl,
@@ -6,6 +6,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import apiDefault from '../services/api'
+import DrawerMenu, { HamburgerBtn } from '../components/DrawerMenu'
 
 const PURPLE = '#4a1a8a'
 const BG     = '#f0f0f6'
@@ -54,6 +55,7 @@ function CampaignCard({ campaign, onPress }) {
 }
 
 export default function CampaignsScreen({ navigation }) {
+  const [showDrawer, setShowDrawer] = useState(false)
   const { data: campaigns = [], isLoading, refetch } = useQuery({
     queryKey: ['mob-campaigns'],
     queryFn: () => apiDefault.get('/campaigns').then(r => r.data),
@@ -62,11 +64,15 @@ export default function CampaignsScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
       <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
+      <DrawerMenu visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} currentScreen="Campaigns" />
 
       {/* Header */}
       <View style={h.header}>
-        <Text style={h.title}>My Campaigns</Text>
-        <Text style={h.sub}>{campaigns.length} campaigns</Text>
+        <HamburgerBtn onPress={() => setShowDrawer(true)} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={h.title}>My Campaigns</Text>
+          <Text style={h.sub}>{campaigns.length} campaigns</Text>
+        </View>
       </View>
 
       {isLoading ? (

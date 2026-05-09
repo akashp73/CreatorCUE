@@ -6,6 +6,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { leadsApi } from '../services/api'
+import DrawerMenu, { HamburgerBtn } from '../components/DrawerMenu'
 
 const PURPLE = '#4a1a8a'
 const BG     = '#f0f0f6'
@@ -16,12 +17,12 @@ const MUTED  = '#6b7280'
 const TAG_COLORS = { HOT: '#ef4444', WARM: '#f59e0b', COLD: '#6366f1' }
 
 const CATEGORIES = [
-  { key: 'new',       label: 'New Leads',          subtitle: 'Not called yet', icon: 'person-add-outline', color: '#3b82f6', bg: '#eff6ff', params: { never_called: 'true' } },
-  { key: 'followup',  label: 'Follow-up Leads',    subtitle: 'Scheduled callbacks', icon: 'calendar-outline', color: '#10b981', bg: '#f0fdf4', params: { follow_up_today: 'true' } },
-  { key: 'notconn',   label: 'Not Connected',       subtitle: 'Missed / unanswered', icon: 'call-outline', color: '#ef4444', bg: '#fef2f2', params: { lead_tag: 'COLD' } },
-  { key: 'hot',       label: 'Hot Leads',           subtitle: 'Score > 80', icon: 'flame-outline', color: '#f59e0b', bg: '#fffbeb', params: { lead_tag: 'HOT' } },
-  { key: 'enrolled',  label: 'Enrolled',            subtitle: 'Converted leads', icon: 'trophy-outline', color: PURPLE, bg: '#f5f3ff', params: { enrollment_stage: 'ENROLLED' } },
-  { key: 'all',       label: 'All My Leads',        subtitle: 'Full lead list', icon: 'people-outline', color: '#6b7280', bg: WHITE, params: {} },
+  { key: 'new',       label: 'New Leads',       subtitle: 'Not called yet',       icon: 'person-add-outline', color: '#3b82f6', bg: '#eff6ff', params: { never_called: 'true' } },
+  { key: 'followup',  label: 'Follow-up',       subtitle: 'Scheduled callbacks',  icon: 'calendar-outline',   color: '#10b981', bg: '#f0fdf4', params: { follow_up_today: 'true' } },
+  { key: 'notconn',   label: 'Not Connected',   subtitle: 'Cold leads',           icon: 'call-outline',       color: '#ef4444', bg: '#fef2f2', params: { lead_tag: 'COLD' } },
+  { key: 'hot',       label: 'Hot Leads',       subtitle: 'Score > 80',           icon: 'flame-outline',      color: '#f59e0b', bg: '#fffbeb', params: { score_min: '80' } },
+  { key: 'enrolled',  label: 'Enrolled',        subtitle: 'Converted leads',      icon: 'trophy-outline',     color: PURPLE,    bg: '#f5f3ff', params: { enrollment_stage: 'ENROLLED' } },
+  { key: 'all',       label: 'All My Leads',    subtitle: 'Full lead list',       icon: 'people-outline',     color: '#6b7280', bg: WHITE,    params: {} },
 ]
 
 function LeadCard({ lead, onPress }) {
@@ -66,9 +67,10 @@ function LeadCard({ lead, onPress }) {
 
 function CategoryScreen({ category, navigation }) {
   const [search, setSearch] = useState('')
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['mob-cat-leads', category.key, search],
-    queryFn: () => leadsApi.getAll({ page: 1, limit: 50, search: search || undefined, ...category.params }).then(r => r.data),
+    queryFn: () => leadsApi.getAll({ page: 1, limit: 100, ...(search ? { search } : {}), ...category.params }).then(r => r.data),
+    retry: 2,
   })
   const leads = data?.data || data?.leads || []
 
@@ -98,14 +100,28 @@ function CategoryScreen({ category, navigation }) {
 
       {isLoading ? (
         <ActivityIndicator size="large" color={PURPLE} style={{ marginTop: 40 }} />
+      ) : isError ? (
+        <View style={{ alignItems: 'center', paddingTop: 60, gap: 12 }}>
+          <Ionicons name="wifi-outline" size={48} color="#d1d5db" />
+          <Text style={{ color: MUTED, fontSize: 15 }}>Could not load leads</Text>
+          <TouchableOpacity onPress={refetch} style={{ backgroundColor: PURPLE, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}>
+            <Text style={{ color: WHITE, fontWeight: '700' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={leads}
           keyExtractor={l => l.id}
           renderItem={({ item }) => <LeadCard lead={item} onPress={() => navigation.navigate('LeadDetail', { leadId: item.id, leadName: item.name })} />}
           contentContainerStyle={{ padding: 12, paddingBottom: 100, gap: 8 }}
-          ListEmptyComponent={<View style={{ alignItems: 'center', paddingTop: 40 }}><Ionicons name="people-outline" size={40} color="#d1d5db" /><Text style={{ color: MUTED, marginTop: 8, fontSize: 14 }}>No leads found</Text></View>}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={PURPLE} />}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingTop: 60 }}>
+              <Ionicons name="people-outline" size={48} color="#d1d5db" />
+              <Text style={{ color: MUTED, marginTop: 10, fontSize: 15 }}>No leads in this category</Text>
+              <Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 13 }}>Pull down to refresh</Text>
+            </View>
+          }
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={PURPLE} colors={[PURPLE]} />}
         />
       )}
 
@@ -119,6 +135,7 @@ function CategoryScreen({ category, navigation }) {
 
 export default function LeadsScreen({ navigation }) {
   const [activeCategory, setActiveCategory] = useState(null)
+  const [showDrawer, setShowDrawer] = useState(false)
 
   if (activeCategory) {
     return <CategoryScreen category={activeCategory} navigation={{ ...navigation, goBack: () => setActiveCategory(null) }} />
@@ -127,9 +144,11 @@ export default function LeadsScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
       <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
+      <DrawerMenu visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} currentScreen="My Leads" />
       {/* Header */}
       <View style={main.header}>
-        <Text style={main.title}>My Leads</Text>
+        <HamburgerBtn onPress={() => setShowDrawer(true)} />
+        <Text style={[main.title, { flex: 1, marginLeft: 12 }]}>My Leads</Text>
         <TouchableOpacity style={main.addBtn} onPress={() => navigation.navigate('Dashboard')}>
           <Ionicons name="add" size={18} color={WHITE} />
         </TouchableOpacity>

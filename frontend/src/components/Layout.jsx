@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
+import useBrandingStore from '../store/brandingStore'
 import { brandingApi } from '../services/api'
 import {
   LayoutDashboard, Users, Flame, CheckSquare, Megaphone,
@@ -67,6 +68,9 @@ function Sidebar({ mobile = false, onClose, isDark }) {
   const location = useLocation()
   const [settingsOpen, setSettingsOpen] = useState(location.pathname.startsWith('/settings'))
 
+  const { setBranding } = useBrandingStore()
+  const globalBranding = useBrandingStore(s => ({ name: s.name, logo_url: s.logo_url }))
+
   const { data: branding } = useQuery({
     queryKey: ['branding'],
     queryFn: () => brandingApi.get().then(r => r.data),
@@ -74,8 +78,12 @@ function Sidebar({ mobile = false, onClose, isDark }) {
     retry: false,
   })
 
-  const logoSrc = buildLogoUrl(branding?.logo_url)
-  const institutionName = branding?.name || user?.institution?.name || 'EduCRM'
+  useEffect(() => {
+    if (branding) setBranding(branding)
+  }, [branding, setBranding])
+
+  const logoSrc = buildLogoUrl(globalBranding.logo_url || branding?.logo_url)
+  const institutionName = globalBranding.name || branding?.name || user?.institution?.name || 'EduCRM'
 
   const handleLogout = async () => {
     await logout()

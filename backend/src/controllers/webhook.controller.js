@@ -16,7 +16,7 @@ async function handleActivity(req, res) {
 
 async function handleLeadCapture(req, res) {
   const {
-    name, email, phone, city, course_interested, source = 'OTHER', idempotency_key,
+    name, email, phone, city, course_interested, source, idempotency_key,
     full_name, phone_number,
     'Email Address': gEmail, 'What is your name?': gName, 'Phone Number': gPhone, 'Course Interested In': gCourse,
   } = req.body;
@@ -27,8 +27,9 @@ async function handleLeadCapture(req, res) {
   const resolvedCourse = course_interested || gCourse;
   if (!resolvedName) return res.status(400).json({ error: 'name is required' });
 
-  // Accept any source string as-is; ?source=APP query param takes precedence over body
-  const resolvedSource = ((req.query?.source || source) + '').trim() || 'OTHER';
+  // Query param source takes highest precedence — never override it.
+  // Body source is second priority. Accept any string value as-is.
+  const resolvedSource = (req.query?.source || source || 'OTHER').trim();
 
   // Duplicate detection — add a note and return existing lead
   if (resolvedPhone || resolvedEmail) {

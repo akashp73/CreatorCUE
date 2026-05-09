@@ -6,6 +6,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { callsApi } from '../services/api'
+import DrawerMenu, { HamburgerBtn } from '../components/DrawerMenu'
 
 const PURPLE = '#4a1a8a'
 const BG     = '#f0f0f6'
@@ -68,7 +69,8 @@ function CallRow({ call, onPress }) {
 }
 
 export default function CallLogsScreen({ navigation }) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date] = useState(new Date().toISOString().split('T')[0])
+  const [showDrawer, setShowDrawer] = useState(false)
 
   const { data: report, isLoading: rl, refetch: rr } = useQuery({ queryKey: ['mob-daily-report'], queryFn: () => callsApi.today().then(r => r.data) })
   const { data: callsData, isLoading: cl, refetch: cr } = useQuery({ queryKey: ['mob-calls-today'], queryFn: () => callsApi.today().then(r => r.data) })
@@ -78,10 +80,12 @@ export default function CallLogsScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
       <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
+      <DrawerMenu visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} currentScreen="CallLogs" />
 
       {/* Header */}
       <View style={h.header}>
-        <View style={{ flex: 1 }}>
+        <HamburgerBtn onPress={() => setShowDrawer(true)} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={h.title}>Call Logs</Text>
           <Text style={h.sub}>{new Date(date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
         </View>

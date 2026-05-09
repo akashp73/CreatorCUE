@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { StatusBar, View, ActivityIndicator } from 'react-native'
+import { StatusBar, View, Text, ActivityIndicator } from 'react-native'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as Notifications from 'expo-notifications'
 import { devicesApi } from './src/services/api'
@@ -16,7 +16,16 @@ Notifications.setNotificationHandler({
 })
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: 1000,
+      staleTime: 60000,      // 1 min — don't refetch while fresh
+      gcTime: 5 * 60000,     // keep in cache 5 min after unmount
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+  },
 })
 
 async function registerForPushNotifications() {
@@ -64,8 +73,9 @@ function Root() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B2B4B' }}>
-        <ActivityIndicator size="large" color="#F6AD2B" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4a1a8a' }}>
+        <ActivityIndicator size="large" color="white" />
+        <Text style={{ color: 'rgba(255,255,255,0.7)', marginTop: 16, fontSize: 14, fontWeight: '600' }}>EduCRM</Text>
       </View>
     )
   }

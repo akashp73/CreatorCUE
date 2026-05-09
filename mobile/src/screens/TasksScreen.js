@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
 import {
   View, Text, SectionList, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, StatusBar,
 } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { tasksApi } from '../services/api'
+import DrawerMenu, { HamburgerBtn } from '../components/DrawerMenu'
 
-const NAVY   = '#0f172a'
-const ACCENT = '#4f46e5'
-const BG     = '#f8fafc'
+const PURPLE = '#4a1a8a'
+const ACCENT = PURPLE
+const BG     = '#f0f0f6'
 
 const SECTIONS_META = [
   { key: 'overdue',   title: 'Overdue',   icon: 'alert-circle-outline',     color: '#ef4444' },
@@ -56,6 +57,7 @@ function TaskItem({ task, onComplete, navigation }) {
 export default function TasksScreen({ navigation }) {
   const qc = useQueryClient()
   const [refreshing, setRef] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
   const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['mob-tasks'],
     queryFn: () => tasksApi.getMyTasks().then(r => r.data),
@@ -76,10 +78,15 @@ export default function TasksScreen({ navigation }) {
 
   return (
     <View style={ts.root}>
+      <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
+      <DrawerMenu visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} currentScreen="Tasks" />
       {/* Header */}
       <View style={ts.header}>
-        <Text style={ts.headerTitle}>My Tasks</Text>
-        <Text style={ts.headerSub}>{total} pending</Text>
+        <HamburgerBtn onPress={() => setShowDrawer(true)} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={ts.headerTitle}>My Tasks</Text>
+          <Text style={ts.headerSub}>{total} pending</Text>
+        </View>
       </View>
 
       {isLoading ? (
@@ -127,7 +134,7 @@ export default function TasksScreen({ navigation }) {
 
 const ts = StyleSheet.create({
   root:          { flex: 1, backgroundColor: BG },
-  header:        { backgroundColor: NAVY, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16 },
+  header:        { backgroundColor: PURPLE, paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16, flexDirection: 'row', alignItems: 'center' },
   headerTitle:   { fontSize: 20, fontWeight: '800', color: '#ffffff' },
   headerSub:     { fontSize: 12, color: '#64748b', marginTop: 2 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginBottom: 8, marginTop: 4 },
@@ -138,7 +145,7 @@ const ts = StyleSheet.create({
   taskOverdue:   { backgroundColor: '#fff5f5', borderLeftWidth: 3, borderLeftColor: '#ef4444' },
   checkbox:      { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#d1d5db', alignItems: 'center', justifyContent: 'center', marginTop: 2, flexShrink: 0 },
   checkboxDone:  { backgroundColor: '#10b981', borderColor: '#10b981' },
-  leadName:      { fontSize: 11, fontWeight: '700', color: ACCENT, marginBottom: 3, textDecorationLine: 'underline' },
+  leadName:      { fontSize: 11, fontWeight: '700', color: PURPLE, marginBottom: 3, textDecorationLine: 'underline' },
   taskTitle:     { fontSize: 14, fontWeight: '500', color: '#0f172a', lineHeight: 20 },
   taskDone:      { textDecorationLine: 'line-through', color: '#94a3b8' },
   metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
@@ -150,6 +157,6 @@ const ts = StyleSheet.create({
   doneTitle:     { fontSize: 18, fontWeight: '700', color: '#0f172a' },
   doneSub:       { fontSize: 14, color: '#94a3b8', marginTop: 4 },
   errorText:     { fontSize: 14, color: '#ef4444', marginTop: 10 },
-  retryBtn:      { marginTop: 12, backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryBtn:      { marginTop: 12, backgroundColor: PURPLE, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
   retryText:     { color: '#ffffff', fontWeight: '700' },
 })

@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons'
 import apiDefault, { dashboardApi, leadsApi, callsApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import { useCallStore } from '../store/callStore'
+import DrawerMenu, { HamburgerBtn } from '../components/DrawerMenu'
 
 // NeoDove color palette — light theme
 const PURPLE  = '#4a1a8a'
@@ -104,6 +105,7 @@ export default function DashboardScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false)
   const [showAddLead, setShowAddLead] = useState(false)
   const [showStatus, setShowStatus] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
   const [userStatus, setUserStatus] = useState('ACTIVE')
   const [breakStart, setBreakStart] = useState(null)
 
@@ -131,12 +133,14 @@ export default function DashboardScreen({ navigation }) {
 
       <StatusModal visible={showStatus} current={userStatus} onSelect={handleStatusSelect} onClose={() => setShowStatus(false)} />
       <AddLeadModal visible={showAddLead} onClose={() => setShowAddLead(false)} onAdded={() => { qc.invalidateQueries(['mob-recent-leads']); qc.invalidateQueries(['mob-stats']) }} />
+      <DrawerMenu visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} currentScreen="Dashboard" />
 
       <ScrollView style={s.root} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PURPLE} />}>
         {/* NeoDove-style header */}
         <View style={s.header}>
           <View style={s.headerTop}>
-            <View style={{ flex: 1 }}>
+            <HamburgerBtn onPress={() => setShowDrawer(true)} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={s.greeting}>{greeting},</Text>
               <Text style={s.userName}>{user?.name?.split(' ')[0] || 'Counsellor'}</Text>
             </View>
