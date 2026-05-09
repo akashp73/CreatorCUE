@@ -17,6 +17,6 @@
       "permissions": ["CALL_PHONE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"]
     },
     "plugins": ["expo-notifications", "expo-secure-store"],
-    "extra": { "eas": { "projectId": "your-project-id" } }
+    "extra": { "eas": { "projectId": "df1ac05c-82ca-481b-befb-21ef85c88443" } }
   }
 }
