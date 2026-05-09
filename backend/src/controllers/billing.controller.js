@@ -24,8 +24,12 @@ async function upgradePlan(req, res) {
   const plan = await prisma.subscriptionPlan.findFirst({ where: { name: plan_name } });
   if (!plan) return res.status(404).json({ error: 'Plan not found' });
   const iid = req.user.institution_id;
-  await prisma.subscription.updateMany({ where: { institution_id: iid, status: 'ACTIVE' }, data: { status: 'CANCELLED' } });
-  const sub = await prisma.subscription.create({ data: { institution_id: iid, plan_id: plan.id, status: 'ACTIVE', expires_at: new Date(Date.now() + 30 * 86400000) }, include: { plan: true } });
+  const sub = await prisma.subscription.upsert({
+    where: { institution_id: iid },
+    update: { plan_id: plan.id, status: 'ACTIVE', expires_at: new Date(Date.now() + 30 * 86400000) },
+    create: { institution_id: iid, plan_id: plan.id, status: 'ACTIVE', expires_at: new Date(Date.now() + 30 * 86400000) },
+    include: { plan: true },
+  });
   await prisma.institution.update({ where: { id: iid }, data: { plan_id: plan.id } });
   res.json({ subscription: sub, message: `Upgraded to ${plan_name}` });
 }
