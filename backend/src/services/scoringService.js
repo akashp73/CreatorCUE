@@ -1,19 +1,27 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Redis setup with graceful fallback
+// Redis setup — optional, graceful fallback to DB-based idempotency if unavailable
 let redis = null;
 try {
   if (process.env.REDIS_URL) {
     const Redis = require('ioredis');
-    redis = new Redis(process.env.REDIS_URL, { lazyConnect: true, connectTimeout: 3000 });
-    redis.on('error', (err) => {
-      console.warn('[Redis] Connection error, disabling Redis:', err.message);
-      redis = null;
+    const client = new Redis(process.env.REDIS_URL, {
+      lazyConnect: true,
+      connectTimeout: 3000,
+      maxRetriesPerRequest: 0,
+      enableOfflineQueue: false,
+      retryStrategy: () => null, // never retry — fail fast and stay disabled
     });
+    client.on('error', (err) => {
+      console.warn('[Redis] Disabled — connection failed:', err.message);
+      redis = null;
+      try { client.disconnect(); } catch {}
+    });
+    redis = client;
   }
 } catch (e) {
-  console.warn('[Redis] Failed to initialize:', e.message);
+  console.warn('[Redis] Failed to initialize, continuing without Redis:', e.message);
   redis = null;
 }
 
