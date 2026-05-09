@@ -141,7 +141,7 @@ export default function LeadsPage() {
               {!isLoading && leads.map(lead => (
                 <tr key={lead.id} onClick={()=>navigate(`/leads/${lead.id}`)} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-800">{lead.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{lead.phone}</td>
+                  <td className="px-4 py-3"><a href={`tel:${lead.phone}`} onClick={e=>e.stopPropagation()} className="text-gray-600 hover:text-indigo-600 transition-colors">{lead.phone}</a></td>
                   <td className="px-4 py-3 text-gray-600">{lead.course_interested || '—'}</td>
                   <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">{lead.source}</span></td>
                   <td className="px-4 py-3"><ScoreBadge score={lead.activity_score} label={lead.score_label}/></td>

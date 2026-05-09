@@ -50,6 +50,7 @@ app.use('/api/portal', require('./routes/portal.routes'));
 app.use('/api/devices', require('./routes/device.routes'));
 app.use('/api/institution', require('./routes/institution.routes'));
 app.use('/api/assignment', require('./routes/assignment.routes'));
+app.use('/api/calls', require('./routes/call.routes'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

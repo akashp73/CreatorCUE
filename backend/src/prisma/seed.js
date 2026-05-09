@@ -54,6 +54,7 @@ async function main() {
   await prisma.usageMetric.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.refreshToken.deleteMany();
+  await prisma.callLog.deleteMany();
   await prisma.assignmentRule.deleteMany();
   await prisma.assignmentConfig.deleteMany();
   await prisma.user.deleteMany();

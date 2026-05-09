@@ -140,6 +140,14 @@ export const reportsApi = {
   export: (p) => api.get('/reports/export', { params: p, responseType: 'blob' }),
 }
 
+// ── Calls ─────────────────────────────────────────────────────
+export const callsApi = {
+  log: (d) => api.post('/calls/log', d),
+  today: () => api.get('/calls/today'),
+  getLeadCalls: (id) => api.get(`/calls/lead/${id}`),
+  sync: (calls) => api.post('/calls/sync', { calls }),
+}
+
 // ── Assignment ────────────────────────────────────────────────
 export const assignmentApi = {
   getConfig: () => api.get('/assignment/config'),

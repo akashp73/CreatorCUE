@@ -10,12 +10,14 @@ import LeadsScreen from '../screens/LeadsScreen'
 import HotLeadsScreen from '../screens/HotLeadsScreen'
 import TasksScreen from '../screens/TasksScreen'
 import LeadDetailScreen from '../screens/LeadDetailScreen'
+import DailyReportScreen from '../screens/DailyReportScreen'
+import CallSettingsScreen from '../screens/CallSettingsScreen'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 
-const NAVY = '#1B2B4B'
-const SAFFRON = '#F6AD2B'
+const NAVY = '#0f172a'
+const INDIGO = '#4f46e5'
 const GREY = '#9CA3AF'
 
 function MainTabs() {
@@ -23,10 +25,10 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: NAVY, borderTopColor: '#2D3748', height: 60, paddingBottom: 8 },
-        tabBarActiveTintColor: SAFFRON,
+        tabBarStyle: { backgroundColor: NAVY, borderTopColor: '#1e293b', height: 60, paddingBottom: 8 },
+        tabBarActiveTintColor: INDIGO,
         tabBarInactiveTintColor: GREY,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}
     >
       <Tab.Screen
@@ -52,6 +54,11 @@ function MainTabs() {
         component={TasksScreen}
         options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={size} color={color} /> }}
       />
+      <Tab.Screen
+        name="My Report"
+        component={DailyReportScreen}
+        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="chart-bar" size={size} color={color} /> }}
+      />
     </Tab.Navigator>
   )
 }
@@ -70,6 +77,17 @@ export default function AppNavigator({ isAuthenticated }) {
               component={LeadDetailScreen}
               options={{
                 headerShown: true,
+                headerStyle: { backgroundColor: NAVY },
+                headerTintColor: '#FFFFFF',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
+            <Stack.Screen
+              name="CallSettings"
+              component={CallSettingsScreen}
+              options={{
+                headerShown: true,
+                title: 'Call Settings',
                 headerStyle: { backgroundColor: NAVY },
                 headerTintColor: '#FFFFFF',
                 headerTitleStyle: { fontWeight: 'bold' },

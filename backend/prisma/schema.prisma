@@ -47,6 +47,7 @@ model Institution {
   portalUsers   ApplicantPortalUser[]
   assignmentConfig AssignmentConfig?
   assignmentRules  AssignmentRule[]
+  callLogs      CallLog[]
 }
 
 model Subscription {
@@ -89,6 +90,7 @@ model User {
   notes           Note[]
   deviceTokens    DeviceToken[]
   assignmentRules AssignmentRule[]
+  callLogs        CallLog[]
   @@unique([institution_id, email])
 }
 
@@ -119,6 +121,7 @@ model Lead {
   payments          Payment[]
   documents         Document[]
   portalUser        ApplicantPortalUser?
+  callLogs          CallLog[]
   @@unique([institution_id, phone])
 }
 
@@ -277,6 +280,22 @@ model RefreshToken {
   token      String   @unique
   expires_at DateTime
   created_at DateTime @default(now())
+}
+
+model CallLog {
+  id             String   @id @default(uuid())
+  institution_id String
+  lead_id        String
+  user_id        String
+  call_type      String
+  duration       Int      @default(0)
+  outcome        String   @default("NO_ANSWER")
+  notes          String?
+  called_at      DateTime @default(now())
+  source         String   @default("MANUAL")
+  institution    Institution @relation(fields: [institution_id], references: [id])
+  lead           Lead     @relation(fields: [lead_id], references: [id])
+  user           User     @relation(fields: [user_id], references: [id])
 }
 
 model AssignmentConfig {

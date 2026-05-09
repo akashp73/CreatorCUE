@@ -3,11 +3,92 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Phone, Mail, MapPin, BookOpen, Activity, User, Calendar, Plus, Check, Flame, Thermometer, Snowflake, MessageCircle, Send, FileText, Upload, Trash2, IndianRupee, Bell, UserPlus, RefreshCw, StickyNote, Zap, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { leadsApi, notesApi, tasksApi, commsApi, emailTplApi, waTplApi, paymentsApi } from '../services/api'
+import { leadsApi, notesApi, tasksApi, commsApi, emailTplApi, waTplApi, paymentsApi, callsApi } from '../services/api'
 import ScoreBadge from '../components/ScoreBadge'
 import Spinner from '../components/Spinner'
 
 const STATUSES = ['NEW','CONTACTED','APPLIED','QUALIFIED','ENROLLED','LOST']
+const CALL_TYPES = ['OUTGOING','INCOMING','MISSED']
+const CALL_OUTCOMES = ['CONNECTED','INTERESTED','NOT_INTERESTED','CALLBACK','NO_ANSWER']
+
+function LogCallModal({ lead, onClose, onLogged }) {
+  const [form, setForm] = useState({ call_type:'OUTGOING', duration:'', outcome:'CONNECTED', notes:'' })
+  const [saving, setSaving] = useState(false)
+  const save = async () => {
+    setSaving(true)
+    try { await callsApi.log({ lead_id: lead.id, ...form, duration: parseInt(form.duration)||0 }); toast.success('Call logged!'); onLogged(); onClose() }
+    catch (err) { toast.error(err.response?.data?.error||'Failed') }
+    finally { setSaving(false) }
+  }
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Phone size={16} className="text-indigo-600"/> Log Call — {lead.name}</h2>
+          <button onClick={onClose}><X size={18} className="text-gray-400"/></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">Call Type</label>
+            <div className="flex gap-2">
+              {CALL_TYPES.map(t=><button key={t} onClick={()=>setForm({...form,call_type:t})} className={`flex-1 py-2 rounded-lg text-xs font-semibold border-2 transition-all ${form.call_type===t?'border-indigo-500 bg-indigo-50 text-indigo-700':'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{t}</button>)}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">Duration (minutes)</label>
+            <input type="number" min="0" max="999" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} placeholder="0" className="input"/>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">Outcome</label>
+            <div className="grid grid-cols-2 gap-2">
+              {CALL_OUTCOMES.map(o=><button key={o} onClick={()=>setForm({...form,outcome:o})} className={`py-2 rounded-lg text-xs font-semibold border-2 transition-all ${form.outcome===o?'border-indigo-500 bg-indigo-50 text-indigo-700':'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{o.replace(/_/g,' ')}</button>)}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">Notes</label>
+            <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Call notes…" rows={2} className="input resize-none"/>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button onClick={onClose} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-all" style={{backgroundColor:'#4f46e5'}}>{saving?'Saving…':'Log Call'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ScheduleCallModal({ lead, onClose }) {
+  const [dateTime, setDateTime] = useState('')
+  const [saving, setSaving] = useState(false)
+  const save = async () => {
+    if (!dateTime) return toast.error('Pick a date and time')
+    setSaving(true)
+    try { await tasksApi.create({ lead_id: lead.id, title: `Call ${lead.name}`, due_at: new Date(dateTime).toISOString() }); toast.success('Call scheduled!'); onClose() }
+    catch { toast.error('Failed to schedule') }
+    finally { setSaving(false) }
+  }
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Calendar size={16} className="text-indigo-600"/> Schedule Call</h2>
+          <button onClick={onClose}><X size={18} className="text-gray-400"/></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">Date & Time *</label>
+            <input type="datetime-local" value={dateTime} onChange={e=>setDateTime(e.target.value)} className="input"/>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-all" style={{backgroundColor:'#4f46e5'}}>{saving?'Saving…':'Schedule'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 const PAY_STATUS = { PENDING:'bg-yellow-100 text-yellow-700', PAID:'bg-green-100 text-green-700', FAILED:'bg-red-100 text-red-600', REFUNDED:'bg-gray-100 text-gray-600' }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -87,11 +168,24 @@ function buildTimeline(lead, notes, comms, payments) {
     })
   })
 
+  // Call logs
+  const CALL_COLORS = { OUTGOING:{color:'#4f46e5',bg:'#eef2ff'}, INCOMING:{color:'#10B981',bg:'#d1fae5'}, MISSED:{color:'#E53E3E',bg:'#fee2e2'} }
+  const OUTCOME_LABELS = { INTERESTED:'✅ Interested', NOT_INTERESTED:'❌ Not interested', CALLBACK:'📅 Callback', NO_ANSWER:'📵 No answer', CONNECTED:'✅ Connected' }
+  ;(calls || []).forEach(call => {
+    const { color, bg } = CALL_COLORS[call.call_type] || CALL_COLORS.OUTGOING
+    events.push({
+      id: `call-${call.id}`, ts: new Date(call.called_at),
+      Icon: Phone, color, bg,
+      title: `${call.call_type.toLowerCase()} call${call.duration > 0 ? ` · ${call.duration}min` : ''}`,
+      desc: [OUTCOME_LABELS[call.outcome] || call.outcome, call.notes].filter(Boolean).join(' · '),
+    })
+  })
+
   return events.sort((a, b) => b.ts - a.ts)
 }
 
-function LeadTimeline({ lead, notes, comms, payments }) {
-  const events = useMemo(() => buildTimeline(lead, notes, comms, payments), [lead, notes, comms, payments])
+function LeadTimeline({ lead, notes, comms, payments, calls }) {
+  const events = useMemo(() => buildTimeline(lead, notes, comms, payments, calls), [lead, notes, comms, payments, calls])
   if (!events.length) return <p className="text-sm text-gray-400 text-center py-8">No activity yet</p>
   return (
     <div className="relative">
@@ -142,6 +236,8 @@ export default function LeadProfilePage() {
   const [noteText, setNoteText] = useState('')
   const [taskForm, setTaskForm] = useState({ title:'', due_at:'' })
   const [savingStatus, setSavingStatus] = useState(false)
+  const [showLogCall, setShowLogCall] = useState(false)
+  const [showScheduleCall, setShowScheduleCall] = useState(false)
 
   const { data: lead, isLoading } = useQuery({ queryKey: ['lead', id], queryFn: () => leadsApi.getById(id).then(r => r.data) })
   const { data: tasks = [] } = useQuery({ queryKey: ['lead-tasks', id], queryFn: () => leadsApi.getTasks(id).then(r => r.data) })
@@ -149,6 +245,7 @@ export default function LeadProfilePage() {
   const { data: comms = [] } = useQuery({ queryKey: ['lead-comms', id], queryFn: () => leadsApi.getComms(id).then(r => r.data) })
   const { data: payments = [] } = useQuery({ queryKey: ['lead-payments', id], queryFn: () => leadsApi.getPayments(id).then(r => r.data) })
   const { data: docs = [] } = useQuery({ queryKey: ['lead-docs', id], queryFn: () => leadsApi.getDocs(id).then(r => r.data) })
+  const { data: calls = [] } = useQuery({ queryKey: ['lead-calls', id], queryFn: () => callsApi.getLeadCalls(id).then(r => r.data), retry: false })
   const { data: actLog = [] } = useQuery({ queryKey: ['lead-activity', id], queryFn: () => leadsApi.getById(id).then(r => r.data.activityLogs || []) })
 
   const updateStatus = async (status) => {
@@ -195,15 +292,20 @@ export default function LeadProfilePage() {
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto">
+      {showLogCall && <LogCallModal lead={lead} onClose={()=>setShowLogCall(false)} onLogged={()=>qc.invalidateQueries(['lead-calls',id])} />}
+      {showScheduleCall && <ScheduleCallModal lead={lead} onClose={()=>setShowScheduleCall(false)} />}
+
       <div className="flex items-center gap-3">
         <button onClick={()=>navigate('/leads')} className="p-2 rounded-lg hover:bg-white border border-gray-200 text-gray-600"><ArrowLeft size={16}/></button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-800">{lead.name}</h1>
           <p className="text-xs text-gray-400">Lead ID: {lead.id.slice(0,8)}…</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <a href={`tel:${lead.phone}`} className="btn-outline text-xs px-3 py-1.5"><Phone size={13}/> Call</a>
           {lead.phone && <a href={`https://wa.me/${lead.phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{backgroundColor:'#25D366'}}><MessageCircle size={13}/> WhatsApp</a>}
+          <button onClick={()=>setShowLogCall(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-all"><Phone size={13}/> Log Call</button>
+          <button onClick={()=>setShowScheduleCall(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border-2 border-amber-200 text-amber-700 hover:bg-amber-50 transition-all"><Calendar size={13}/> Schedule Call</button>
         </div>
       </div>
 
@@ -284,14 +386,45 @@ export default function LeadProfilePage() {
         {/* Right: tabs */}
         <div className="lg:col-span-2 card p-0 overflow-hidden">
           <div className="flex border-b border-gray-100 px-2 overflow-x-auto">
-            {['timeline','notes','tasks','communications','payments'].map(t => (
+            {['timeline','calls','notes','tasks','communications','payments'].map(t => (
               <TabBtn key={t} active={tab===t} onClick={()=>setTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</TabBtn>
             ))}
           </div>
 
           <div className="p-5 overflow-y-auto max-h-[600px]">
             {/* Timeline */}
-            {tab === 'timeline' && <LeadTimeline lead={lead} notes={notes} comms={comms} payments={payments} />}
+            {tab === 'timeline' && <LeadTimeline lead={lead} notes={notes} comms={comms} payments={payments} calls={calls} />}
+
+            {tab === 'calls' && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center mb-1">
+                  <p className="text-xs text-gray-500">{calls.length} call{calls.length !== 1 ? 's' : ''} logged</p>
+                  <button onClick={()=>setShowLogCall(true)} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"><Phone size={12}/> Log Call</button>
+                </div>
+                {calls.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No calls logged yet</p>}
+                {calls.map(call => {
+                  const colors = { OUTGOING:'#4f46e5', INCOMING:'#10B981', MISSED:'#E53E3E' }
+                  const color = colors[call.call_type] || '#4f46e5'
+                  const outLabels = { INTERESTED:'✅ Interested', NOT_INTERESTED:'❌ Not interested', CALLBACK:'📅 Callback', NO_ANSWER:'📵 No answer', CONNECTED:'✅ Connected' }
+                  return (
+                    <div key={call.id} className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{backgroundColor: color+'18'}}>
+                        <Phone size={14} style={{color}}/>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{backgroundColor:color+'18',color}}>{call.call_type}</span>
+                          {call.duration > 0 && <span className="text-xs text-gray-500">{call.duration} min</span>}
+                          <span className="text-xs text-gray-600">{outLabels[call.outcome] || call.outcome}</span>
+                        </div>
+                        {call.notes && <p className="text-xs text-gray-500 mt-1">{call.notes}</p>}
+                        <p className="text-xs text-gray-400 mt-1">{call.user?.name} · {new Date(call.called_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Notes */}
             {tab === 'notes' && (

@@ -65,4 +65,11 @@ export const devicesApi = {
   register: (d) => api.post('/devices/register', d),
 }
 
+export const callsApi = {
+  log: (d) => api.post('/calls/log', d),
+  today: () => api.get('/calls/today'),
+  getLeadCalls: (id) => api.get(`/calls/lead/${id}`),
+  sync: (calls) => api.post('/calls/sync', { calls }),
+}
+
 export default api

@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { Download, Users, TrendingUp, IndianRupee, Target, Medal, ChevronDown } from 'lucide-react'
+import { Download, Users, TrendingUp, IndianRupee, Target, Medal, Phone, MessageCircle, Copy, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { reportsApi } from '../services/api'
+import { reportsApi, callsApi } from '../services/api'
 import Spinner from '../components/Spinner'
 
 const NAVY = '#0f172a', SAFFRON = '#4f46e5'
@@ -63,6 +63,7 @@ export default function ReportsPage() {
   const { data: funnel, isLoading: fl } = useQuery({ queryKey: ['rep-funnel', params], queryFn: () => reportsApi.funnel(params).then(r => r.data), enabled: tab === 'funnel' })
   const { data: sourceRoi = [], isLoading: rl } = useQuery({ queryKey: ['rep-roi', params], queryFn: () => reportsApi.sourceRoi(params).then(r => r.data), enabled: tab === 'roi' })
   const { data: forecast, isLoading: fcl } = useQuery({ queryKey: ['rep-forecast'], queryFn: () => reportsApi.forecast().then(r => r.data), enabled: tab === 'forecast' })
+  const { data: myReport, isLoading: mrl } = useQuery({ queryKey: ['rep-my-report'], queryFn: () => callsApi.today().then(r => r.data), enabled: tab === 'myreport', refetchInterval: tab === 'myreport' ? 60000 : false })
 
   const exportCsv = async (type) => {
     try {
@@ -89,7 +90,7 @@ export default function ReportsPage() {
 
       <div className="card p-0 overflow-hidden">
         <div className="flex border-b border-gray-100 px-2 overflow-x-auto">
-          {[['overview', 'Overview'], ['agents', 'Agent Performance'], ['funnel', 'Funnel'], ['roi', 'Source ROI'], ['forecast', '📈 Forecast']].map(([k, l]) => (
+          {[['overview', 'Overview'], ['agents', 'Agent Performance'], ['funnel', 'Funnel'], ['roi', 'Source ROI'], ['forecast', '📈 Forecast'], ['myreport', '📋 My Report']].map(([k, l]) => (
             <TabBtn key={k} active={tab === k} onClick={() => setTab(k)}>{l}</TabBtn>
           ))}
         </div>
@@ -239,6 +240,51 @@ export default function ReportsPage() {
               </table>
             </div>
           ))}
+
+          {/* My Daily Report */}
+          {tab === 'myreport' && (mrl ? <Spinner /> : myReport && (() => {
+            const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+            const reportText = `📊 My Daily Report — ${today}\n\n📞 Calls\n• Total Logged: ${myReport.total_calls}\n• Connected: ${myReport.connected_calls}\n• Missed: ${myReport.missed_calls}\n• Duration: ${myReport.total_duration} min\n\n💼 Leads\n• Converted: ${myReport.leads_converted}\n• New Leads: ${myReport.new_leads}\n\n💬 WhatsApp Sent: ${myReport.whatsapp_sent}\n\n— via EduCRM`
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(reportText)}`
+            return (
+              <div className="space-y-5 max-w-xl">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-700">Today — {today}</p>
+                  <div className="flex gap-2">
+                    <button onClick={()=>{navigator.clipboard.writeText(reportText);toast.success('Report copied!')}} className="btn-outline text-xs py-1.5 px-3"><Copy size={13}/> Copy</button>
+                    <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-all hover:opacity-90" style={{backgroundColor:'#25D366'}}><MessageCircle size={13}/> Send via WhatsApp</a>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label:'Total Calls', value: myReport.total_calls, icon: Phone, color:'#4f46e5' },
+                    { label:'Connected', value: myReport.connected_calls, icon: Phone, color:'#10B981' },
+                    { label:'Missed / No Answer', value: myReport.missed_calls, icon: Phone, color:'#E53E3E' },
+                    { label:'Total Duration', value: `${myReport.total_duration} min`, icon: Target, color:'#F59E0B' },
+                    { label:'Leads Converted', value: myReport.leads_converted, icon: TrendingUp, color:'#10B981' },
+                    { label:'New Leads Added', value: myReport.new_leads, icon: Users, color:'#4f46e5' },
+                    { label:'WhatsApp Sent', value: myReport.whatsapp_sent, icon: MessageCircle, color:'#25D366' },
+                  ].map(({ label, value, icon: Icon, color }) => (
+                    <div key={label} className="card flex items-center gap-3 p-4">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{backgroundColor:color+'18'}}>
+                        <Icon size={16} style={{color}}/>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">{label}</p>
+                        <p className="text-xl font-bold text-gray-900 tabular-nums mt-0.5">{value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-slate-900 rounded-xl p-4">
+                  <p className="text-xs text-slate-400 mb-2 font-mono uppercase tracking-wide">Report Preview</p>
+                  <pre className="text-xs text-slate-200 font-mono whitespace-pre-wrap leading-relaxed">{reportText}</pre>
+                </div>
+              </div>
+            )
+          })())}
 
           {/* Revenue Forecast */}
           {tab === 'forecast' && (fcl ? <Spinner /> : forecast && (
