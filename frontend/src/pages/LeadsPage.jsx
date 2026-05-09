@@ -111,7 +111,7 @@ export default function LeadsPage() {
         {showFilters && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <select value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">All Statuses</option>{STATUSES.map(s=><option key={s}>{s}</option>)}</select>
-            <select value={filters.source} onChange={e=>setFilters({...filters,source:e.target.value})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">All Sources</option>{SOURCES.map(s=><option key={s}>{s}</option>)}</select>
+            <input value={filters.source} onChange={e=>setFilters({...filters,source:e.target.value})} placeholder="Source (e.g. YOUTUBE, APP)" className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none" />
             <input type="number" value={filters.score_min} onChange={e=>setFilters({...filters,score_min:e.target.value})} placeholder="Score min" className="px-3 py-2 border border-gray-300 rounded-lg text-sm"/>
             <input type="number" value={filters.score_max} onChange={e=>setFilters({...filters,score_max:e.target.value})} placeholder="Score max" className="px-3 py-2 border border-gray-300 rounded-lg text-sm"/>
             <button onClick={()=>setFilters({search:'',status:'',source:'',score_min:'',score_max:''})} className="col-span-full text-sm text-red-500 hover:text-red-700 text-left">Clear filters</button>

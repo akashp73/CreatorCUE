@@ -20,6 +20,7 @@ const WEBHOOKS = [
     method: 'POST',
     path: '/lead',
     canTest: true,
+    canCustomSource: true,
     payload: {
       name: 'Rahul Sharma',
       phone: '9876543210',
@@ -96,9 +97,19 @@ function CopyButton({ text, size = 14 }) {
 }
 
 function WebhookCard({ wh, apiKey }) {
-  const url = `${WH_BASE}${wh.path}`
+  const [customSource, setCustomSource] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
+
+  const sourceParam = wh.canCustomSource && customSource.trim()
+    ? `?source=${encodeURIComponent(customSource.trim())}`
+    : ''
+  const url = `${WH_BASE}${wh.path}${sourceParam}`
+
+  // Merge custom source into the displayed example payload
+  const displayPayload = wh.canCustomSource
+    ? { ...wh.payload, source: customSource.trim() || wh.payload.source }
+    : wh.payload
 
   const handleTest = async () => {
     if (!apiKey) return toast.error('API key not loaded yet')
@@ -160,12 +171,34 @@ function WebhookCard({ wh, apiKey }) {
         <CopyButton text={url} />
       </div>
 
+      {/* Custom source row (Lead Capture only) */}
+      {wh.canCustomSource && (
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-white">
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs font-semibold text-gray-600 whitespace-nowrap">Custom Source</label>
+            <input
+              type="text"
+              value={customSource}
+              onChange={e => setCustomSource(e.target.value.replace(/\s/g, '_'))}
+              placeholder="e.g. APP, TEACHX, YOUTUBE"
+              className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-colors"
+              maxLength={40}
+            />
+          </div>
+          {customSource.trim() && (
+            <div className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg font-mono flex-shrink-0">
+              ?source=<span className="font-bold">{customSource.trim()}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Payload + response */}
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
         <div className="p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Request Body</p>
           <pre className="text-xs font-mono text-gray-700 bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre leading-relaxed">
-            {JSON.stringify(wh.payload, null, 2)}
+            {JSON.stringify(displayPayload, null, 2)}
           </pre>
         </div>
         <div className="p-4">

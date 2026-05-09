@@ -27,8 +27,8 @@ async function handleLeadCapture(req, res) {
   const resolvedCourse = course_interested || gCourse;
   if (!resolvedName) return res.status(400).json({ error: 'name is required' });
 
-  const VALID = ['FACEBOOK', 'GOOGLE', 'WEBSITE', 'REFERRAL', 'WALK_IN', 'OTHER'];
-  const resolvedSource = VALID.includes((source || '').toUpperCase()) ? source.toUpperCase() : 'OTHER';
+  // Accept any source string as-is; ?source=APP query param takes precedence over body
+  const resolvedSource = ((req.query?.source || source) + '').trim() || 'OTHER';
 
   // Duplicate detection — add a note and return existing lead
   if (resolvedPhone || resolvedEmail) {
