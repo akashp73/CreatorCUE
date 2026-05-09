@@ -2,7 +2,7 @@ import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 
 import LoginScreen from '../screens/LoginScreen'
 import DashboardScreen from '../screens/DashboardScreen'
@@ -16,17 +16,24 @@ import CallSettingsScreen from '../screens/CallSettingsScreen'
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 
-const NAVY = '#0f172a'
-const INDIGO = '#4f46e5'
-const GREY = '#9CA3AF'
+const NAVY   = '#0f172a'
+const ACCENT = '#4f46e5'
+const GREY   = '#94a3b8'
 
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: NAVY, borderTopColor: '#1e293b', height: 60, paddingBottom: 8 },
-        tabBarActiveTintColor: INDIGO,
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e2e8f0',
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
+        },
+        tabBarActiveTintColor: ACCENT,
         tabBarInactiveTintColor: GREY,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}
@@ -34,30 +41,30 @@ function MainTabs() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="view-dashboard" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="My Leads"
         component={LeadsScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-group" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="Hot Leads"
         component={HotLeadsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="fire" size={size} color={color} />,
-          tabBarActiveTintColor: '#E53E3E',
+          tabBarIcon: ({ color, size }) => <Ionicons name="flame-outline" size={size} color={color} />,
+          tabBarActiveTintColor: '#ef4444',
         }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="checkmark-circle-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
         name="My Report"
         component={DailyReportScreen}
-        options={{ tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="chart-bar" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" size={size} color={color} /> }}
       />
     </Tab.Navigator>
   )
@@ -78,8 +85,9 @@ export default function AppNavigator({ isAuthenticated }) {
               options={{
                 headerShown: true,
                 headerStyle: { backgroundColor: NAVY },
-                headerTintColor: '#FFFFFF',
-                headerTitleStyle: { fontWeight: 'bold' },
+                headerTintColor: '#ffffff',
+                headerTitleStyle: { fontWeight: '700', fontSize: 16 },
+                headerBackTitleVisible: false,
               }}
             />
             <Stack.Screen
@@ -89,8 +97,9 @@ export default function AppNavigator({ isAuthenticated }) {
                 headerShown: true,
                 title: 'Call Settings',
                 headerStyle: { backgroundColor: NAVY },
-                headerTintColor: '#FFFFFF',
-                headerTitleStyle: { fontWeight: 'bold' },
+                headerTintColor: '#ffffff',
+                headerTitleStyle: { fontWeight: '700', fontSize: 16 },
+                headerBackTitleVisible: false,
               }}
             />
           </>

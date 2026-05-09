@@ -1,30 +1,52 @@
 import React, { useState } from 'react'
 import {
   View, Text, SectionList, TouchableOpacity, StyleSheet,
-  RefreshControl, Animated,
+  RefreshControl, ActivityIndicator,
 } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { tasksApi } from '../services/api'
 
-const NAVY = '#1B2B4B', SAFFRON = '#F6AD2B'
+const NAVY   = '#0f172a'
+const ACCENT = '#4f46e5'
+const BG     = '#f8fafc'
+
+const SECTIONS_META = [
+  { key: 'overdue',   title: 'Overdue',   icon: 'alert-circle-outline',     color: '#ef4444' },
+  { key: 'due_today', title: 'Due Today', icon: 'today-outline',            color: '#f59e0b' },
+  { key: 'upcoming',  title: 'Upcoming',  icon: 'calendar-outline',         color: ACCENT },
+]
 
 function TaskItem({ task, onComplete, navigation }) {
-  const isOverdue = new Date(task.due_at) < new Date()
+  const isOverdue = !task.is_completed && new Date(task.due_at) < new Date()
+
   return (
-    <View style={[s.taskCard, isOverdue && s.taskOverdue]}>
-      <TouchableOpacity style={[s.checkbox, task.is_completed && s.checkboxDone]} onPress={() => !task.is_completed && onComplete(task.id)}>
-        {task.is_completed && <MaterialCommunityIcons name="check" size={14} color="white" />}
+    <View style={[ts.taskCard, isOverdue && ts.taskOverdue]}>
+      <TouchableOpacity
+        style={[ts.checkbox, task.is_completed && ts.checkboxDone]}
+        onPress={() => !task.is_completed && onComplete(task.id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        {task.is_completed && <Ionicons name="checkmark" size={13} color="white" />}
       </TouchableOpacity>
-      <View style={s.taskBody}>
-        <TouchableOpacity onPress={() => navigation.navigate('LeadDetail', { leadId: task.lead?.id, leadName: task.lead?.name })}>
-          <Text style={s.leadName}>{task.lead?.name}</Text>
-        </TouchableOpacity>
-        <Text style={[s.taskTitle, task.is_completed && s.taskDone]}>{task.title}</Text>
-        <View style={s.taskMeta}>
-          <MaterialCommunityIcons name="clock-outline" size={12} color="#9CA3AF" />
-          <Text style={s.taskTime}>{new Date(task.due_at).toLocaleString()}</Text>
-          {isOverdue && !task.is_completed && <View style={s.overdueBadge}><Text style={s.overdueText}>OVERDUE</Text></View>}
+
+      <View style={{ flex: 1 }}>
+        {task.lead && (
+          <TouchableOpacity onPress={() => navigation.navigate('LeadDetail', { leadId: task.lead.id, leadName: task.lead.name })}>
+            <Text style={ts.leadName}>{task.lead.name}</Text>
+          </TouchableOpacity>
+        )}
+        <Text style={[ts.taskTitle, task.is_completed && ts.taskDone]} numberOfLines={2}>
+          {task.title}
+        </Text>
+        <View style={ts.metaRow}>
+          <Ionicons name="time-outline" size={12} color="#94a3b8" />
+          <Text style={ts.timeText}>{new Date(task.due_at).toLocaleString()}</Text>
+          {isOverdue && (
+            <View style={ts.overduePill}>
+              <Text style={ts.overdueText}>OVERDUE</Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -33,8 +55,8 @@ function TaskItem({ task, onComplete, navigation }) {
 
 export default function TasksScreen({ navigation }) {
   const qc = useQueryClient()
-  const [refreshing, setRefreshing] = useState(false)
-  const { data, isLoading, refetch } = useQuery({
+  const [refreshing, setRef] = useState(false)
+  const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['mob-tasks'],
     queryFn: () => tasksApi.getMyTasks().then(r => r.data),
   })
@@ -44,40 +66,53 @@ export default function TasksScreen({ navigation }) {
     catch {}
   }
 
-  const onRefresh = async () => { setRefreshing(true); await refetch(); setRefreshing(false) }
+  const onRefresh = async () => { setRef(true); await refetch(); setRef(false) }
 
-  const sections = [
-    { title: '⚠️ Overdue', data: data?.overdue || [], color: '#E53E3E' },
-    { title: '📅 Due Today', data: data?.due_today || [], color: SAFFRON },
-    { title: '🔵 Upcoming', data: data?.upcoming || [], color: '#3182CE' },
-  ].filter(s => s.data.length > 0)
+  const sections = SECTIONS_META
+    .map(m => ({ ...m, data: data?.[m.key] || [] }))
+    .filter(s => s.data.length > 0)
 
-  const total = (data?.overdue?.length || 0) + (data?.due_today?.length || 0) + (data?.upcoming?.length || 0)
+  const total = SECTIONS_META.reduce((sum, m) => sum + (data?.[m.key]?.length || 0), 0)
 
   return (
-    <View style={s.root}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>My Tasks</Text>
-        <Text style={s.headerSub}>{total} pending</Text>
+    <View style={ts.root}>
+      {/* Header */}
+      <View style={ts.header}>
+        <Text style={ts.headerTitle}>My Tasks</Text>
+        <Text style={ts.headerSub}>{total} pending</Text>
       </View>
 
-      {total === 0 && !isLoading ? (
-        <View style={s.empty}>
-          <Text style={s.emptyEmoji}>✅</Text>
-          <Text style={s.emptyTitle}>All caught up!</Text>
-          <Text style={s.emptySub}>No pending tasks right now.</Text>
+      {isLoading ? (
+        <View style={ts.center}><ActivityIndicator size="large" color={ACCENT} /></View>
+      ) : error ? (
+        <View style={ts.center}>
+          <Ionicons name="warning-outline" size={40} color="#ef4444" />
+          <Text style={ts.errorText}>Failed to load tasks</Text>
+          <TouchableOpacity style={ts.retryBtn} onPress={refetch}>
+            <Text style={ts.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : total === 0 ? (
+        <View style={ts.center}>
+          <View style={ts.doneCircle}>
+            <Ionicons name="checkmark-circle" size={48} color="#10b981" />
+          </View>
+          <Text style={ts.doneTitle}>All done!</Text>
+          <Text style={ts.doneSub}>No pending tasks right now.</Text>
         </View>
       ) : (
         <SectionList
           sections={sections}
           keyExtractor={t => t.id}
           contentContainerStyle={{ padding: 12, paddingBottom: 80 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={SAFFRON} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
+          stickySectionHeadersEnabled={false}
           renderSectionHeader={({ section }) => (
-            <View style={[s.sectionHeader, { borderLeftColor: section.color, borderLeftWidth: 3 }]}>
-              <Text style={[s.sectionTitle, { color: section.color }]}>{section.title}</Text>
-              <View style={[s.badge, { backgroundColor: section.color + '20' }]}>
-                <Text style={[s.badgeText, { color: section.color }]}>{section.data.length}</Text>
+            <View style={[ts.sectionHeader, { backgroundColor: section.color + '12' }]}>
+              <Ionicons name={section.icon} size={15} color={section.color} />
+              <Text style={[ts.sectionTitle, { color: section.color }]}>{section.title}</Text>
+              <View style={[ts.sectionBadge, { backgroundColor: section.color + '20' }]}>
+                <Text style={[ts.sectionCount, { color: section.color }]}>{section.data.length}</Text>
               </View>
             </View>
           )}
@@ -90,29 +125,31 @@ export default function TasksScreen({ navigation }) {
   )
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F7F8FC' },
-  header: { backgroundColor: NAVY, padding: 16, paddingTop: 50 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: 'white' },
-  headerSub: { fontSize: 12, color: '#93C5FD', marginTop: 2 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingLeft: 10, paddingVertical: 8, backgroundColor: 'transparent', marginBottom: 4 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', flex: 1 },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-  taskCard: { backgroundColor: 'white', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2 },
-  taskOverdue: { backgroundColor: '#FFF5F5' },
-  checkbox: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center', marginTop: 2, flexShrink: 0 },
-  checkboxDone: { backgroundColor: '#38A169', borderColor: '#38A169' },
-  taskBody: { flex: 1 },
-  leadName: { fontSize: 12, fontWeight: '600', color: NAVY, marginBottom: 3 },
-  taskTitle: { fontSize: 14, fontWeight: '500', color: '#1F2937', lineHeight: 20 },
-  taskDone: { textDecorationLine: 'line-through', color: '#9CA3AF' },
-  taskMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-  taskTime: { fontSize: 11, color: '#9CA3AF', flex: 1 },
-  overdueBadge: { backgroundColor: '#FED7D7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  overdueText: { fontSize: 9, fontWeight: '700', color: '#C53030' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  emptySub: { fontSize: 14, color: '#9CA3AF', marginTop: 6 },
+const ts = StyleSheet.create({
+  root:          { flex: 1, backgroundColor: BG },
+  header:        { backgroundColor: NAVY, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16 },
+  headerTitle:   { fontSize: 20, fontWeight: '800', color: '#ffffff' },
+  headerSub:     { fontSize: 12, color: '#64748b', marginTop: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginBottom: 8, marginTop: 4 },
+  sectionTitle:  { fontSize: 13, fontWeight: '700', flex: 1, textTransform: 'uppercase', letterSpacing: 0.4 },
+  sectionBadge:  { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  sectionCount:  { fontSize: 12, fontWeight: '700' },
+  taskCard:      { backgroundColor: '#ffffff', borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 12, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+  taskOverdue:   { backgroundColor: '#fff5f5', borderLeftWidth: 3, borderLeftColor: '#ef4444' },
+  checkbox:      { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#d1d5db', alignItems: 'center', justifyContent: 'center', marginTop: 2, flexShrink: 0 },
+  checkboxDone:  { backgroundColor: '#10b981', borderColor: '#10b981' },
+  leadName:      { fontSize: 11, fontWeight: '700', color: ACCENT, marginBottom: 3, textDecorationLine: 'underline' },
+  taskTitle:     { fontSize: 14, fontWeight: '500', color: '#0f172a', lineHeight: 20 },
+  taskDone:      { textDecorationLine: 'line-through', color: '#94a3b8' },
+  metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
+  timeText:      { fontSize: 11, color: '#94a3b8', flex: 1 },
+  overduePill:   { backgroundColor: '#fee2e2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  overdueText:   { fontSize: 9, fontWeight: '800', color: '#dc2626', letterSpacing: 0.3 },
+  center:        { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  doneCircle:    { marginBottom: 12 },
+  doneTitle:     { fontSize: 18, fontWeight: '700', color: '#0f172a' },
+  doneSub:       { fontSize: 14, color: '#94a3b8', marginTop: 4 },
+  errorText:     { fontSize: 14, color: '#ef4444', marginTop: 10 },
+  retryBtn:      { marginTop: 12, backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryText:     { color: '#ffffff', fontWeight: '700' },
 })
