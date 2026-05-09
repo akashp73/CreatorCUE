@@ -25,20 +25,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#1B2B4B' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#0f172a' }}>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: '#F6AD2B' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: '#4f46e5' }}>
             <GraduationCap size={32} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold" style={{ color: '#F6AD2B' }}>EduCRM</h1>
-          <p className="text-blue-300 mt-1">Education CRM Platform</p>
+          <h1 className="text-3xl font-bold text-white">EduCRM</h1>
+          <p className="text-slate-400 mt-1 text-sm">Education CRM Platform</p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Sign in to your account</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to your account</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
@@ -65,21 +65,21 @@ export default function LoginPage() {
               </div>
             </div>
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold text-white text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 mt-2"
-              style={{ backgroundColor: '#F6AD2B' }}>
+              className="w-full py-3 rounded-lg font-semibold text-white text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-60 mt-2 shadow-sm"
+              style={{ backgroundColor: '#4f46e5' }}>
               {loading && <Loader2 size={16} className="animate-spin"/>}
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-5 p-3 bg-gray-50 rounded-lg text-xs text-gray-500 space-y-0.5">
+          <div className="mt-5 p-3 bg-gray-50 rounded-xl text-xs text-gray-500 space-y-0.5">
             <p className="font-medium text-gray-600 mb-1">Demo Credentials</p>
             <p>Admin: <span className="font-mono">admin@demo.com</span></p>
             <p>Counsellor: <span className="font-mono">counsellor@demo.com</span></p>
             <p>Password: <span className="font-mono">Demo@1234</span></p>
           </div>
         </div>
-        <p className="text-center text-blue-400 text-xs mt-6">© 2024 EduCRM · Education CRM Platform</p>
+        <p className="text-center text-slate-500 text-xs mt-6">© 2024 EduCRM · Education CRM Platform</p>
       </div>
     </div>
   )

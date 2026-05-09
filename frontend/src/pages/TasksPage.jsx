@@ -9,9 +9,9 @@ import Spinner from '../components/Spinner'
 function TaskItem({ task, onComplete }) {
   const isOverdue = new Date(task.due_at) < new Date()
   return (
-    <div className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${isOverdue ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+    <div className={`flex items-start gap-3 p-4 rounded-xl border transition-all hover:shadow-sm ${isOverdue ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
       <div className="flex-1 min-w-0">
-        <Link to={`/leads/${task.lead?.id}`} className="text-xs font-semibold hover:underline" style={{color:'#1B2B4B'}}>{task.lead?.name}</Link>
+        <Link to={`/leads/${task.lead?.id}`} className="text-xs font-semibold hover:text-indigo-600 transition-colors" style={{color:'#4f46e5'}}>{task.lead?.name}</Link>
         <p className="text-sm font-medium text-gray-800 mt-0.5">{task.title}</p>
         <div className="flex items-center gap-1 mt-1">
           <Calendar size={11} className="text-gray-400"/>
@@ -19,7 +19,7 @@ function TaskItem({ task, onComplete }) {
           {isOverdue && <span className="text-xs font-semibold text-red-500 flex items-center gap-0.5 ml-2"><AlertTriangle size={11}/> Overdue</span>}
         </div>
       </div>
-      <button onClick={() => onComplete(task.id)} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{backgroundColor:'#F6AD2B'}}>
+      <button onClick={() => onComplete(task.id)} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-opacity" style={{backgroundColor:'#4f46e5'}}>
         <Check size={12}/> Done
       </button>
     </div>
@@ -57,11 +57,11 @@ export default function TasksPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{backgroundColor:'#F6AD2B20'}}>
-          <Check size={20} style={{color:'#F6AD2B'}}/>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{backgroundColor:'#4f46e515'}}>
+          <Check size={20} style={{color:'#4f46e5'}}/>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-800">My Tasks</h1>
+          <h1 className="text-xl font-bold text-gray-900">My Tasks</h1>
           <p className="text-sm text-gray-500">{total} pending tasks</p>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function TasksPage() {
       )}
 
       <Section title="⚠️ Overdue" icon={AlertTriangle} tasks={overdue} color="#E53E3E" onComplete={complete}/>
-      <Section title="📅 Due Today" icon={Clock} tasks={due_today} color="#DD6B20" onComplete={complete}/>
+      <Section title="📅 Due Today" icon={Clock} tasks={due_today} color="#f59e0b" onComplete={complete}/>
       <Section title="🔵 Upcoming" icon={Calendar} tasks={upcoming} color="#3182CE" onComplete={complete}/>
     </div>
   )

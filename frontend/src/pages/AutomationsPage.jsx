@@ -6,7 +6,7 @@ import { workflowsApi } from '../services/api'
 import Spinner from '../components/Spinner'
 
 const TRIGGERS = [{ value:'lead.created',label:'Lead Created'},{value:'lead.score_changed',label:'Score Changed'},{value:'lead.status_changed',label:'Status Changed'},{value:'payment.completed',label:'Payment Completed'}]
-const STEP_TYPES = [{ value:'send_email',label:'Send Email',color:'#3B82F6'},{value:'send_whatsapp',label:'Send WhatsApp',color:'#25D366'},{value:'add_task',label:'Add Task',color:'#F6AD2B'},{value:'change_status',label:'Change Status',color:'#8B5CF6'},{value:'assign_counsellor',label:'Assign Counsellor',color:'#EC4899'}]
+const STEP_TYPES = [{ value:'send_email',label:'Send Email',color:'#3B82F6'},{value:'send_whatsapp',label:'Send WhatsApp',color:'#25D366'},{value:'add_task',label:'Add Task',color:'#4f46e5'},{value:'change_status',label:'Change Status',color:'#8B5CF6'},{value:'assign_counsellor',label:'Assign Counsellor',color:'#EC4899'}]
 
 function WorkflowModal({ onClose, onSaved }) {
   const [form, setForm] = useState({ name:'', trigger_event:'lead.created', trigger_conditions:{}, steps:[] })
@@ -44,7 +44,7 @@ function WorkflowModal({ onClose, onSaved }) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-medium text-gray-600">Steps</label>
-              <button onClick={addStep} className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg text-white" style={{backgroundColor:'#1B2B4B'}}><Plus size={12}/> Add Step</button>
+              <button onClick={addStep} className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg text-white" style={{backgroundColor:'#0f172a'}}><Plus size={12}/> Add Step</button>
             </div>
             {form.steps.length === 0 && <p className="text-xs text-gray-400 text-center py-4 border-2 border-dashed border-gray-200 rounded-xl">No steps yet. Add one above.</p>}
             {form.steps.map((step,i) => {
@@ -75,7 +75,7 @@ function WorkflowModal({ onClose, onSaved }) {
         </div>
         <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#F6AD2B'}}>{saving?'Saving...':'Create Workflow'}</button>
+          <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#4f46e5'}}>{saving?'Saving...':'Create Workflow'}</button>
         </div>
       </div>
     </div>

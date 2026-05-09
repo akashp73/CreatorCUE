@@ -14,7 +14,7 @@ function TabBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
       className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${active ? 'text-gray-800' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-      style={active ? { borderColor: '#F6AD2B' } : {}}>
+      style={active ? { borderColor: '#4f46e5' } : {}}>
       {children}
     </button>
   )
@@ -76,7 +76,7 @@ export default function LeadProfilePage() {
 
   const score = lead.activity_score
   const label = lead.score_label || (score > 80 ? 'HOT' : score > 50 ? 'WARM' : 'COLD')
-  const scoreColor = label === 'HOT' ? '#E53E3E' : label === 'WARM' ? '#DD6B20' : '#3182CE'
+  const scoreColor = label === 'HOT' ? '#E53E3E' : label === 'WARM' ? '#f59e0b' : '#3182CE'
   const ScoreIcon = label === 'HOT' ? Flame : label === 'WARM' ? Thermometer : Snowflake
 
   return (
@@ -136,7 +136,7 @@ export default function LeadProfilePage() {
           <div className="card">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2"><FileText size={15}/> Documents</h3>
-              <label className="cursor-pointer text-xs text-saffron font-medium flex items-center gap-1" style={{color:'#F6AD2B'}}>
+              <label className="cursor-pointer text-xs text-saffron font-medium flex items-center gap-1" style={{color:'#4f46e5'}}>
                 <Upload size={12}/> Upload <input type="file" className="hidden" onChange={uploadDoc}/>
               </label>
             </div>
@@ -186,14 +186,14 @@ export default function LeadProfilePage() {
               <div className="space-y-4">
                 <div className="p-3 bg-gray-50 rounded-xl space-y-2">
                   <textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Write a note..." rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none resize-none"/>
-                  <button onClick={addNote} className="px-4 py-2 rounded-lg text-sm font-medium text-white" style={{backgroundColor:'#F6AD2B'}}>Add Note</button>
+                  <button onClick={addNote} className="px-4 py-2 rounded-lg text-sm font-medium text-white" style={{backgroundColor:'#4f46e5'}}>Add Note</button>
                 </div>
                 {notes.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No notes yet</p>}
                 {notes.map(note => (
                   <div key={note.id} className="border border-gray-100 rounded-xl p-4">
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.content}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <div className="w-5 h-5 rounded-full bg-navy flex items-center justify-center text-white text-xs" style={{backgroundColor:'#1B2B4B'}}>{note.author?.name?.[0]}</div>
+                      <div className="w-5 h-5 rounded-full bg-navy flex items-center justify-center text-white text-xs" style={{backgroundColor:'#0f172a'}}>{note.author?.name?.[0]}</div>
                       <p className="text-xs text-gray-500">{note.author?.name} · {new Date(note.created_at).toLocaleString()}</p>
                     </div>
                   </div>
@@ -208,7 +208,7 @@ export default function LeadProfilePage() {
                   <input value={taskForm.title} onChange={e=>setTaskForm({...taskForm,title:e.target.value})} placeholder="Task title..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
                   <div className="flex gap-2">
                     <input type="datetime-local" value={taskForm.due_at} onChange={e=>setTaskForm({...taskForm,due_at:e.target.value})} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
-                    <button onClick={addTask} className="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-1" style={{backgroundColor:'#F6AD2B'}}><Plus size={14}/> Add</button>
+                    <button onClick={addTask} className="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-1" style={{backgroundColor:'#4f46e5'}}><Plus size={14}/> Add</button>
                   </div>
                 </div>
                 {tasks.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No tasks yet</p>}

@@ -6,14 +6,14 @@ import toast from 'react-hot-toast'
 import { reportsApi } from '../services/api'
 import Spinner from '../components/Spinner'
 
-const NAVY='#1B2B4B', SAFFRON='#F6AD2B'
-const COLORS=['#1B2B4B','#F6AD2B','#3182CE','#38A169','#E53E3E','#D69E2E']
+const NAVY='#0f172a', SAFFRON='#4f46e5'
+const COLORS=['#0f172a','#4f46e5','#3182CE','#38A169','#E53E3E','#6366f1']
 
 function TabBtn({ active, onClick, children }) {
-  return <button onClick={onClick} className={`px-5 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${active?'text-gray-800':'border-transparent text-gray-500 hover:text-gray-700'}`} style={active?{borderColor:SAFFRON}:{}}>{children}</button>
+  return <button onClick={onClick} className={`px-5 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${active?'text-gray-900 font-semibold':'border-transparent text-gray-500 hover:text-gray-700'}`} style={active?{borderColor:SAFFRON}:{}}>{children}</button>
 }
 function ConvBadge({ rate }) {
-  const color = rate>=20?'#38A169':rate>=10?'#DD6B20':'#E53E3E'
+  const color = rate>=20?'#38A169':rate>=10?'#f59e0b':'#E53E3E'
   return <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{backgroundColor:color+'18',color}}>{rate}%</span>
 }
 

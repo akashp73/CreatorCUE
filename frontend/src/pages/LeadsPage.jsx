@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, Plus, Upload, Filter, ChevronLeft, ChevronRight, Phone, X } from 'lucide-react'
+import { Search, Plus, Upload, Download, Filter, ChevronLeft, ChevronRight, Phone, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { leadsApi } from '../services/api'
 import ScoreBadge from '../components/ScoreBadge'
@@ -39,7 +39,7 @@ function AddLeadModal({ onClose, onCreated }) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#F6AD2B'}}>{loading?'Creating...':'Create Lead'}</button>
+            <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-all" style={{backgroundColor:'#4f46e5'}}>{loading?'Creating...':'Create Lead'}</button>
           </div>
         </form>
       </div>
@@ -68,6 +68,16 @@ export default function LeadsPage() {
     e.target.value = ''
   }
 
+  const handleExport = async () => {
+    try {
+      const activeFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+      const r = await leadsApi.exportCsv(activeFilters)
+      const url = URL.createObjectURL(r.data)
+      const a = document.createElement('a'); a.href = url; a.download = 'leads.csv'; a.click()
+      URL.revokeObjectURL(url)
+    } catch { toast.error('Export failed') }
+  }
+
   return (
     <div className="space-y-4">
       {showModal && <AddLeadModal onClose={()=>setShowModal(false)} onCreated={()=>qc.invalidateQueries(['leads'])} />}
@@ -79,7 +89,8 @@ export default function LeadsPage() {
           <p className="text-sm text-gray-500">{pagination.total || leads.length} total leads</p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="cursor-pointer flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={handleExport} className="btn-outline text-sm"><Download size={14}/> Export CSV</button>
+          <label className="cursor-pointer flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">
             <Upload size={14}/> Import CSV <input type="file" accept=".csv" className="hidden" onChange={handleImport}/>
           </label>
           <button onClick={()=>setShowModal(true)} className="btn-gold text-sm"><Plus size={15}/> Add Lead</button>

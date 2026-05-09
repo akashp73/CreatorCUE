@@ -50,6 +50,7 @@ export const leadsApi = {
   delete: (id) => api.delete(`/leads/${id}`),
   assign: (id, uid) => api.put(`/leads/${id}/assign`, { assigned_to: uid }),
   bulkImport: (file) => { const f = new FormData(); f.append('file', file); return api.post('/leads/bulk-import', f) },
+  exportCsv: (p) => api.get('/leads/export', { params: p, responseType: 'blob' }),
   inviteToPortal: (id) => api.post(`/leads/${id}/invite-to-portal`),
   getTasks: (id) => api.get(`/leads/${id}/tasks`),
   getNotes: (id) => api.get(`/leads/${id}/notes`),

@@ -23,7 +23,7 @@ function RuleRow({ rule, onUpdated }) {
         </div>
       ) : (
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-bold" style={{backgroundColor:'#F6AD2B20',color:'#F6AD2B'}}>+{rule.points} pts</span>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-bold" style={{backgroundColor:'#4f46e520',color:'#4f46e5'}}>+{rule.points} pts</span>
           <button onClick={()=>setEditing(true)} className="text-gray-400 hover:text-gray-600"><Edit3 size={14}/></button>
         </div>
       )}</td>
@@ -48,7 +48,7 @@ export default function ScoreRulesPage() {
       <form onSubmit={add} className="card p-4 flex gap-3">
         <input value={newRule.activity_type} onChange={e=>setNewRule({...newRule,activity_type:e.target.value})} placeholder="activity_type (e.g. video_watched)" className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
         <input type="number" value={newRule.points} onChange={e=>setNewRule({...newRule,points:e.target.value})} placeholder="Points" className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
-        <button type="submit" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{backgroundColor:'#F6AD2B'}}><Plus size={14}/> Add</button>
+        <button type="submit" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{backgroundColor:'#4f46e5'}}><Plus size={14}/> Add</button>
       </form>
       <div className="card p-0 overflow-hidden">
         <table className="w-full text-sm">

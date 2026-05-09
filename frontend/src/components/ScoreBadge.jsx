@@ -2,7 +2,7 @@ import React from 'react'
 
 const MAP = {
   HOT:  { bg: 'bg-red-100',    text: 'text-red-700',    dot: '#E53E3E' },
-  WARM: { bg: 'bg-orange-100', text: 'text-orange-700', dot: '#DD6B20' },
+  WARM: { bg: 'bg-amber-100', text: 'text-amber-700', dot: '#f59e0b' },
   COLD: { bg: 'bg-blue-100',   text: 'text-blue-700',   dot: '#3182CE' },
 }
 

@@ -57,10 +57,10 @@ export default function BrandingPage() {
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{backgroundColor:form.primary_color}}>{preview?<img src={preview} alt="logo" className="w-8 h-8 object-contain"/>:<GraduationCap size={22} className="text-white"/>}</div>
             <p className="font-bold text-lg" style={{color:form.primary_color}}>{form.name||'Your Institution'}</p>
             <p className="text-xs text-gray-400 mt-0.5">Education CRM · Sign in to continue</p>
-            <div className="mt-4 w-48 py-2 rounded-lg text-white text-xs text-center font-semibold" style={{backgroundColor:'#F6AD2B'}}>Sign In</div>
+            <div className="mt-4 w-48 py-2 rounded-lg text-white text-xs text-center font-semibold" style={{backgroundColor:'#4f46e5'}}>Sign In</div>
           </div>
         </div>
-        <button onClick={save} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#F6AD2B'}}>{saving?'Saving...':'Save Branding'}</button>
+        <button onClick={save} disabled={saving} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#4f46e5'}}>{saving?'Saving...':'Save Branding'}</button>
       </div>
     </div>
   )

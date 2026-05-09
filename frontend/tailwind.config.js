@@ -4,14 +4,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy:    '#1B2B4B',
-        charcoal:'#2D3748',
-        saffron: '#F6AD2B',
+        navy:    '#0f172a',
+        charcoal:'#1e293b',
+        saffron: '#4f46e5',
+        accent:  '#4f46e5',
         hot:     '#E53E3E',
-        warm:    '#DD6B20',
+        warm:    '#f59e0b',
         cold:    '#3182CE',
         success: '#38A169',
-        bg:      '#F7F8FC',
+        bg:      '#f8fafc',
       },
     },
   },

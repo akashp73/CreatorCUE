@@ -8,27 +8,27 @@
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F7F8FC;
+  background-color: #f8fafc;
   margin: 0;
 }
 
 @layer components {
   .btn-gold {
-    @apply bg-saffron text-white font-semibold px-4 py-2 rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
+    @apply bg-saffron text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm;
   }
   .btn-navy {
-    @apply bg-navy text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2;
+    @apply bg-navy text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm;
   }
   .btn-outline {
-    @apply border border-gray-300 bg-white text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2;
+    @apply border border-gray-200 bg-white text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2;
   }
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5;
   }
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-colors;
   }
   .badge-hot { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700; }
-  .badge-warm { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700; }
+  .badge-warm { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700; }
   .badge-cold { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700; }
 }

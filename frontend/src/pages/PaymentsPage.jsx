@@ -63,7 +63,7 @@ function CreateModal({ onClose, onCreated }) {
           <div><label className="text-xs font-medium text-gray-600 mb-1 block">Due Date</label><input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/></div>
           <div className="flex gap-3 pt-2">
             <button onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-            <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#F6AD2B'}}>{saving?'Creating...':'Generate Link'}</button>
+            <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 hover:opacity-90 transition-all" style={{backgroundColor:'#4f46e5'}}>{saving?'Creating...':'Generate Link'}</button>
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function PaymentsPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {[{icon:TrendingUp,label:'Total Collected',value:`₹${(summary.total_collected||0).toLocaleString('en-IN')}`,color:'#38A169'},{icon:Clock,label:'Pending Amount',value:`₹${(summary.total_pending||0).toLocaleString('en-IN')}`,color:'#DD6B20'},{icon:AlertTriangle,label:'Overdue',value:summary.overdue_count||0,color:'#E53E3E'}].map(c => (
+        {[{icon:TrendingUp,label:'Total Collected',value:`₹${(summary.total_collected||0).toLocaleString('en-IN')}`,color:'#38A169'},{icon:Clock,label:'Pending Amount',value:`₹${(summary.total_pending||0).toLocaleString('en-IN')}`,color:'#f59e0b'},{icon:AlertTriangle,label:'Overdue',value:summary.overdue_count||0,color:'#E53E3E'}].map(c => (
           <div key={c.label} className="card flex items-start gap-3 p-4">
             <div className="p-2 rounded-xl" style={{backgroundColor:c.color+'18'}}><c.icon size={18} style={{color:c.color}}/></div>
             <div><p className="text-xs text-gray-500">{c.label}</p><p className="text-lg font-bold text-gray-800 mt-0.5">{c.value}</p></div>

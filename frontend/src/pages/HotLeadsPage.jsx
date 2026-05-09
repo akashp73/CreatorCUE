@@ -66,7 +66,7 @@ export default function HotLeadsPage() {
             </Link>
             <div className="text-xs text-gray-500">📅 Last active: {lead.last_activity_at ? new Date(lead.last_activity_at).toLocaleDateString() : '—'}</div>
             <div className="flex gap-2 pt-2 border-t border-gray-100">
-              <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white" style={{backgroundColor:'#1B2B4B'}}>
+              <a href={`tel:${lead.phone}`} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-opacity" style={{backgroundColor:'#4f46e5'}}>
                 <Phone size={12}/> Call
               </a>
               <a href={`https://wa.me/${lead.phone?.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white" style={{backgroundColor:'#25D366'}}>

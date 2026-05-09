@@ -51,7 +51,7 @@ function TemplateModal({ tpl, onClose, onSaved }) {
         </div>
         <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#F6AD2B'}}>{saving?'Saving...':isEdit?'Update':'Create'}</button>
+          <button onClick={save} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{backgroundColor:'#4f46e5'}}>{saving?'Saving...':isEdit?'Update':'Create'}</button>
         </div>
       </div>
     </div>
