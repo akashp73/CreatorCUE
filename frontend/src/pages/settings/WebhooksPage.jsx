@@ -98,6 +98,7 @@ function CopyButton({ text, size = 14 }) {
 
 function WebhookCard({ wh, apiKey }) {
   const [customSource, setCustomSource] = useState('')
+  const [showGenerated, setShowGenerated] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
 
@@ -173,21 +174,37 @@ function WebhookCard({ wh, apiKey }) {
 
       {/* Custom source row (Lead Capture only) */}
       {wh.canCustomSource && (
-        <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-white">
-          <div className="flex items-center gap-2 flex-1">
-            <label className="text-xs font-semibold text-gray-600 whitespace-nowrap">Custom Source</label>
+        <div className="px-5 py-4 border-b border-gray-100 bg-white space-y-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-600 whitespace-nowrap flex-shrink-0">
+              Custom Source
+            </label>
             <input
               type="text"
               value={customSource}
-              onChange={e => setCustomSource(e.target.value.replace(/\s/g, '_'))}
-              placeholder="e.g. APP, TEACHX, YOUTUBE"
+              onChange={e => {
+                setCustomSource(e.target.value.replace(/\s/g, '_'))
+                setShowGenerated(false)
+              }}
+              onKeyDown={e => { if (e.key === 'Enter' && customSource.trim()) setShowGenerated(true) }}
+              placeholder="APP, TEACHX, YOUTUBE"
               className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-colors"
               maxLength={40}
             />
+            <button
+              onClick={() => { if (customSource.trim()) setShowGenerated(true) }}
+              disabled={!customSource.trim()}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all hover:opacity-90 flex-shrink-0"
+              style={{ backgroundColor: '#4f46e5' }}
+            >
+              Generate URL
+            </button>
           </div>
-          {customSource.trim() && (
-            <div className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg font-mono flex-shrink-0">
-              ?source=<span className="font-bold">{customSource.trim()}</span>
+
+          {showGenerated && customSource.trim() && (
+            <div className="flex items-center gap-3 bg-slate-900 rounded-xl px-4 py-3">
+              <code className="text-xs font-mono text-emerald-400 flex-1 break-all select-all">{url}</code>
+              <CopyButton text={url} />
             </div>
           )}
         </div>
