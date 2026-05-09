@@ -53,12 +53,75 @@ r.put('/:id/enrollment-stage', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Toggle verification
+// Toggle verification (PATCH)
+r.patch('/:id/verify', async (req, res) => {
+  try {
+    const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const updated = await prisma.lead.update({ where: { id: req.params.id }, data: { is_verified: !lead.is_verified } });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+// Toggle verification (PUT — backwards compat)
 r.put('/:id/verify', async (req, res) => {
   try {
     const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
     const updated = await prisma.lead.update({ where: { id: req.params.id }, data: { is_verified: !lead.is_verified } });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH enrollment-stage
+r.patch('/:id/enrollment-stage', async (req, res) => {
+  try {
+    const STAGES = ['NEW', 'COUNSELLING', 'APPLIED', 'PAYMENT_PENDING', 'ENROLLED'];
+    const { stage } = req.body;
+    if (!STAGES.includes(stage)) return res.status(400).json({ error: 'Invalid stage' });
+    const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    const updated = await prisma.lead.update({ where: { id: req.params.id }, data: { enrollment_stage: stage } });
+    res.json(updated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH dispose — save full disposition
+r.patch('/:id/dispose', async (req, res) => {
+  try {
+    const { outcome, notes, follow_up_date, status, lead_tag, enrollment_stage, reassign_to, call_duration } = req.body;
+    if (!outcome) return res.status(400).json({ error: 'outcome is required' });
+
+    const lead = await prisma.lead.findFirst({ where: { id: req.params.id, institution_id: req.user.institution_id, is_deleted: false } });
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    const now = new Date();
+    const updateData = {
+      last_call_date: now,
+      last_call_outcome: outcome,
+      last_activity_at: now,
+      ...(follow_up_date && { follow_up_date: new Date(follow_up_date) }),
+      ...(status && { status }),
+      ...(lead_tag && { lead_tag }),
+      ...(enrollment_stage && { enrollment_stage }),
+      ...(reassign_to && { assigned_to: reassign_to }),
+    };
+
+    await prisma.lead.update({ where: { id: req.params.id }, data: updateData });
+
+    await prisma.callLog.create({
+      data: {
+        institution_id: req.user.institution_id,
+        lead_id: req.params.id,
+        user_id: req.user.id,
+        call_type: 'OUTGOING',
+        duration: parseInt(call_duration) || 0,
+        outcome,
+        notes: notes || null,
+        source: 'MANUAL',
+      },
+    });
+
+    const updated = await prisma.lead.findFirst({ where: { id: req.params.id }, include: { assignee: { select: { id: true, name: true } } } });
     res.json(updated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

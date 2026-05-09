@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import useAuthStore from './store/authStore'
+import useThemeStore from './store/themeStore'
 import Layout from './components/Layout'
 
 // Pages
@@ -39,8 +40,14 @@ function RequireAuth({ children }) {
 export default function App() {
   const init = useAuthStore(s => s.init)
   const user = useAuthStore(s => s.user)
+  const isDark = useThemeStore(s => s.isDark)
 
   useEffect(() => { init() }, [init])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    document.body.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc'
+  }, [isDark])
 
   return (
     <Routes>

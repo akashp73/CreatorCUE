@@ -12,14 +12,15 @@ import TasksScreen from '../screens/TasksScreen'
 import LeadDetailScreen from '../screens/LeadDetailScreen'
 import DailyReportScreen from '../screens/DailyReportScreen'
 import CallSettingsScreen from '../screens/CallSettingsScreen'
+import CampaignsScreen from '../screens/CampaignsScreen'
+import CallLogsScreen from '../screens/CallLogsScreen'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 
-const BG     = '#0f172a'
-const ACCENT = '#6366f1'
-const MUTED  = '#475569'
-const ACTIVE = '#a5b4fc'
+const PURPLE = '#4a1a8a'
+const MUTED  = '#9ca3af'
+const WHITE  = '#ffffff'
 
 function MainTabs() {
   return (
@@ -27,14 +28,14 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0f1a2b',
-          borderTopColor: 'rgba(255,255,255,0.08)',
+          backgroundColor: WHITE,
+          borderTopColor: '#e5e7eb',
           borderTopWidth: 1,
           height: 64,
           paddingBottom: 10,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: ACTIVE,
+        tabBarActiveTintColor: PURPLE,
         tabBarInactiveTintColor: MUTED,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
       }}
@@ -50,17 +51,22 @@ function MainTabs() {
         options={{ tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} /> }}
       />
       <Tab.Screen
-        name="Hot Leads"
-        component={HotLeadsScreen}
+        name="Campaigns"
+        component={CampaignsScreen}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="megaphone-outline" size={size} color={color} /> }}
+      />
+      <Tab.Screen
+        name="CallLogs"
+        component={CallLogsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="flame-outline" size={size} color={color} />,
-          tabBarActiveTintColor: '#f87171',
+          tabBarLabel: 'Call Logs',
+          tabBarIcon: ({ color, size }) => <Ionicons name="call-outline" size={size} color={color} />,
         }}
       />
       <Tab.Screen
         name="Tasks"
         component={TasksScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="checkmark-circle-outline" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color, size }) => <Ionicons name="checkbox-outline" size={size} color={color} /> }}
       />
     </Tab.Navigator>
   )
@@ -76,6 +82,7 @@ export default function AppNavigator({ isAuthenticated }) {
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="LeadDetail" component={LeadDetailScreen} />
+            <Stack.Screen name="Hot Leads" component={HotLeadsScreen} />
             <Stack.Screen name="DailyReport" component={DailyReportScreen} />
             <Stack.Screen name="CallSettings" component={CallSettingsScreen} />
           </>

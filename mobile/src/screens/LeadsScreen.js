@@ -1,213 +1,198 @@
 import React, { useState } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  TextInput, RefreshControl, ActivityIndicator, Linking,
+  TextInput, RefreshControl, ActivityIndicator, Linking, StatusBar,
 } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { leadsApi } from '../services/api'
 
-const NAVY   = '#0f172a'
-const ACCENT = '#4f46e5'
-const BG     = '#f8fafc'
+const PURPLE = '#4a1a8a'
+const BG     = '#f0f0f6'
+const WHITE  = '#ffffff'
+const TEXT   = '#1a1a2e'
+const MUTED  = '#6b7280'
 
-const SCORE_COLOR = (label) =>
-  label === 'HOT' ? '#ef4444' : label === 'WARM' ? '#f59e0b' : '#3b82f6'
+const TAG_COLORS = { HOT: '#ef4444', WARM: '#f59e0b', COLD: '#6366f1' }
 
-const STATUS_COLOR = {
-  NEW: '#64748b', CONTACTED: '#3b82f6', APPLIED: '#f59e0b',
-  QUALIFIED: ACCENT, ENROLLED: '#10b981', LOST: '#ef4444',
-}
-
-const FILTER_CHIPS = ['All', 'NEW', 'CONTACTED', 'APPLIED', 'QUALIFIED', 'ENROLLED']
-
-function ScoreBadge({ score, label }) {
-  const color = SCORE_COLOR(label)
-  return (
-    <View style={[ls.badge, { backgroundColor: color + '15' }]}>
-      <View style={[ls.dot, { backgroundColor: color }]} />
-      <Text style={[ls.badgeText, { color }]}>{score} {label}</Text>
-    </View>
-  )
-}
+const CATEGORIES = [
+  { key: 'new',       label: 'New Leads',          subtitle: 'Not called yet', icon: 'person-add-outline', color: '#3b82f6', bg: '#eff6ff', params: { never_called: 'true' } },
+  { key: 'followup',  label: 'Follow-up Leads',    subtitle: 'Scheduled callbacks', icon: 'calendar-outline', color: '#10b981', bg: '#f0fdf4', params: { follow_up_today: 'true' } },
+  { key: 'notconn',   label: 'Not Connected',       subtitle: 'Missed / unanswered', icon: 'call-outline', color: '#ef4444', bg: '#fef2f2', params: { lead_tag: 'COLD' } },
+  { key: 'hot',       label: 'Hot Leads',           subtitle: 'Score > 80', icon: 'flame-outline', color: '#f59e0b', bg: '#fffbeb', params: { lead_tag: 'HOT' } },
+  { key: 'enrolled',  label: 'Enrolled',            subtitle: 'Converted leads', icon: 'trophy-outline', color: PURPLE, bg: '#f5f3ff', params: { enrollment_stage: 'ENROLLED' } },
+  { key: 'all',       label: 'All My Leads',        subtitle: 'Full lead list', icon: 'people-outline', color: '#6b7280', bg: WHITE, params: {} },
+]
 
 function LeadCard({ lead, onPress }) {
-  const daysAgo = lead.last_activity_at
-    ? Math.floor((Date.now() - new Date(lead.last_activity_at)) / 86400000)
-    : null
-  const statusColor = STATUS_COLOR[lead.status] || '#64748b'
-
+  const tagColor = TAG_COLORS[lead.lead_tag] || TAG_COLORS.COLD
+  const stageColors = { NEW: '#6366f1', COUNSELLING: '#f59e0b', APPLIED: '#3b82f6', PAYMENT_PENDING: '#f97316', ENROLLED: '#10b981' }
+  const stageColor = stageColors[lead.enrollment_stage] || '#6366f1'
   return (
-    <TouchableOpacity style={ls.card} onPress={onPress} activeOpacity={0.8}>
-      <View style={ls.cardTop}>
-        <View style={ls.avatarWrap}>
-          <Text style={ls.avatarText}>{lead.name?.[0]?.toUpperCase()}</Text>
+    <TouchableOpacity style={lc.card} onPress={onPress} activeOpacity={0.8}>
+      <View style={lc.top}>
+        <View style={[lc.avatar, { backgroundColor: PURPLE + '15' }]}>
+          <Text style={[lc.avatarText, { color: PURPLE }]}>{lead.name?.[0]?.toUpperCase()}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={ls.name} numberOfLines={1}>{lead.name}</Text>
-          <TouchableOpacity onPress={e => { e.stopPropagation(); Linking.openURL(`tel:${lead.phone}`) }}>
-            <Text style={ls.phone}>{lead.phone}</Text>
-          </TouchableOpacity>
+          <Text style={lc.name} numberOfLines={1}>{lead.name}</Text>
+          <Text style={lc.sub} numberOfLines={1}>{lead.course_interested || lead.source}</Text>
         </View>
-        <ScoreBadge score={lead.activity_score} label={lead.score_label || 'COLD'} />
+        <View style={[lc.tagPill, { backgroundColor: tagColor + '15' }]}>
+          <Text style={[lc.tagText, { color: tagColor }]}>{lead.lead_tag || 'COLD'}</Text>
+        </View>
       </View>
-
-      <View style={ls.cardBottom}>
-        {lead.course_interested ? (
-          <View style={ls.chip}>
-            <Ionicons name="book-outline" size={10} color="#64748b" />
-            <Text style={ls.chipText} numberOfLines={1}>{lead.course_interested}</Text>
+      <View style={lc.bottom}>
+        <View style={[lc.stagePill, { backgroundColor: stageColor + '15' }]}>
+          <Text style={[lc.stageText, { color: stageColor }]}>{lead.enrollment_stage || 'NEW'}</Text>
+        </View>
+        {lead.follow_up_date && (
+          <View style={lc.followUp}>
+            <Ionicons name="calendar-outline" size={11} color="#f59e0b" />
+            <Text style={lc.followUpText}>{new Date(lead.follow_up_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
           </View>
-        ) : null}
-        <View style={[ls.chip, { backgroundColor: statusColor + '15' }]}>
-          <Text style={[ls.chipText, { color: statusColor }]}>{lead.status}</Text>
-        </View>
-        <View style={ls.chip}>
-          <Text style={ls.chipText}>{lead.source}</Text>
-        </View>
-        {daysAgo !== null && (
-          <Text style={ls.activity}>{daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}</Text>
         )}
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={() => Linking.openURL(`tel:${lead.phone}`)} style={lc.callBtn}>
+          <Ionicons name="call-outline" size={14} color={PURPLE} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL(`whatsapp://send?phone=${lead.phone.replace(/\D/g, '')}`)} style={[lc.callBtn, { marginLeft: 4 }]}>
+          <Ionicons name="logo-whatsapp" size={14} color="#25D366" />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   )
 }
 
-export default function LeadsScreen({ navigation }) {
-  const [search, setSearch]   = useState('')
-  const [filter, setFilter]   = useState('All')
-  const [refreshing, setRef]  = useState(false)
-
-  const params = {
-    search: search.trim() || undefined,
-    status: filter !== 'All' ? filter : undefined,
-    page: 1, limit: 50,
-  }
-
-  const { data, isLoading, refetch, error } = useQuery({
-    queryKey: ['mob-leads', params],
-    queryFn: () => leadsApi.getAll(params).then(r => r.data),
+function CategoryScreen({ category, navigation }) {
+  const [search, setSearch] = useState('')
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['mob-cat-leads', category.key, search],
+    queryFn: () => leadsApi.getAll({ page: 1, limit: 50, search: search || undefined, ...category.params }).then(r => r.data),
   })
-
-  const leads = data?.leads || data?.data || []
-  const total = data?.pagination?.total || leads.length
-
-  const onRefresh = async () => { setRef(true); await refetch(); setRef(false) }
+  const leads = data?.data || data?.leads || []
 
   return (
-    <View style={ls.root}>
-      {/* Header */}
-      <View style={ls.header}>
-        <Text style={ls.headerTitle}>My Leads</Text>
-        <View style={ls.countBadge}>
-          <Text style={ls.countText}>{total}</Text>
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      <View style={cl.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={cl.backBtn}>
+          <Ionicons name="arrow-back" size={20} color={WHITE} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={cl.title}>{category.label}</Text>
+          <Text style={cl.subtitle}>{leads.length} leads</Text>
         </View>
       </View>
 
-      {/* Search */}
-      <View style={ls.searchRow}>
-        <View style={ls.searchBox}>
-          <Ionicons name="search-outline" size={16} color="#94a3b8" />
-          <TextInput
-            style={ls.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search name or phone..."
-            placeholderTextColor="#94a3b8"
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#94a3b8" />
-            </TouchableOpacity>
-          )}
-        </View>
+      <View style={cl.searchBar}>
+        <Ionicons name="search-outline" size={16} color={MUTED} />
+        <TextInput
+          style={cl.searchInput}
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search name, phone..."
+          placeholderTextColor={MUTED}
+        />
+        {search ? <TouchableOpacity onPress={() => setSearch('')}><Ionicons name="close-circle" size={16} color={MUTED} /></TouchableOpacity> : null}
       </View>
 
-      {/* Filter chips */}
-      <FlatList
-        horizontal
-        data={FILTER_CHIPS}
-        keyExtractor={i => i}
-        contentContainerStyle={ls.chips}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[ls.filterChip, filter === item && ls.filterChipActive]}
-            onPress={() => setFilter(item)}
-          >
-            <Text style={[ls.filterText, filter === item && ls.filterTextActive]}>{item}</Text>
-          </TouchableOpacity>
-        )}
-      />
-
-      {/* List */}
       {isLoading ? (
-        <View style={ls.center}>
-          <ActivityIndicator size="large" color={ACCENT} />
-        </View>
-      ) : error ? (
-        <View style={ls.center}>
-          <Ionicons name="warning-outline" size={40} color="#ef4444" />
-          <Text style={ls.errorText}>Failed to load leads</Text>
-          <TouchableOpacity style={ls.retryBtn} onPress={refetch}>
-            <Text style={ls.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ActivityIndicator size="large" color={PURPLE} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={leads}
           keyExtractor={l => l.id}
-          contentContainerStyle={{ padding: 12, paddingBottom: 80 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
-          renderItem={({ item }) => (
-            <LeadCard
-              lead={item}
-              onPress={() => navigation.navigate('LeadDetail', { leadId: item.id, leadName: item.name })}
-            />
-          )}
-          ListEmptyComponent={
-            <View style={ls.center}>
-              <Ionicons name="people-outline" size={48} color="#cbd5e1" />
-              <Text style={ls.emptyText}>No leads found</Text>
-            </View>
-          }
+          renderItem={({ item }) => <LeadCard lead={item} onPress={() => navigation.navigate('LeadDetail', { leadId: item.id, leadName: item.name })} />}
+          contentContainerStyle={{ padding: 12, paddingBottom: 100, gap: 8 }}
+          ListEmptyComponent={<View style={{ alignItems: 'center', paddingTop: 40 }}><Ionicons name="people-outline" size={40} color="#d1d5db" /><Text style={{ color: MUTED, marginTop: 8, fontSize: 14 }}>No leads found</Text></View>}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={PURPLE} />}
         />
       )}
+
+      <TouchableOpacity style={cl.fab} activeOpacity={0.9}>
+        <Ionicons name="call" size={18} color={WHITE} />
+        <Text style={cl.fabText}>Start Calling</Text>
+      </TouchableOpacity>
     </View>
   )
 }
 
-const ls = StyleSheet.create({
-  root:            { flex: 1, backgroundColor: BG },
-  header:          { backgroundColor: NAVY, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16, flexDirection: 'row', alignItems: 'center' },
-  headerTitle:     { fontSize: 20, fontWeight: '800', color: '#ffffff', flex: 1 },
-  countBadge:      { backgroundColor: ACCENT, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  countText:       { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-  searchRow:       { paddingHorizontal: 12, paddingVertical: 10 },
-  searchBox:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, gap: 8, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
-  searchInput:     { flex: 1, fontSize: 14, color: '#0f172a' },
-  chips:           { paddingHorizontal: 12, paddingBottom: 6, gap: 8 },
-  filterChip:      { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
-  filterChipActive:{ backgroundColor: ACCENT, borderColor: ACCENT },
-  filterText:      { fontSize: 12, fontWeight: '600', color: '#64748b' },
-  filterTextActive:{ color: '#ffffff' },
-  card:            { backgroundColor: '#ffffff', borderRadius: 14, padding: 14, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
-  cardTop:         { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  avatarWrap:      { width: 40, height: 40, borderRadius: 20, backgroundColor: ACCENT + '18', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  avatarText:      { fontSize: 16, fontWeight: '700', color: ACCENT },
-  name:            { fontSize: 15, fontWeight: '700', color: '#0f172a' },
-  phone:           { fontSize: 13, color: ACCENT, marginTop: 1, fontFamily: 'monospace', textDecorationLine: 'underline' },
-  badge:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, gap: 4 },
-  dot:             { width: 5, height: 5, borderRadius: 3 },
-  badgeText:       { fontSize: 11, fontWeight: '700' },
-  cardBottom:      { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
-  chip:            { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: '#f1f5f9' },
-  chipText:        { fontSize: 11, fontWeight: '600', color: '#475569' },
-  activity:        { fontSize: 11, color: '#94a3b8', marginLeft: 'auto' },
-  center:          { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyText:       { fontSize: 14, color: '#94a3b8', marginTop: 10 },
-  errorText:       { fontSize: 14, color: '#ef4444', marginTop: 10 },
-  retryBtn:        { marginTop: 12, backgroundColor: ACCENT, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText:       { color: '#ffffff', fontWeight: '700' },
+export default function LeadsScreen({ navigation }) {
+  const [activeCategory, setActiveCategory] = useState(null)
+
+  if (activeCategory) {
+    return <CategoryScreen category={activeCategory} navigation={{ ...navigation, goBack: () => setActiveCategory(null) }} />
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
+      {/* Header */}
+      <View style={main.header}>
+        <Text style={main.title}>My Leads</Text>
+        <TouchableOpacity style={main.addBtn} onPress={() => navigation.navigate('Dashboard')}>
+          <Ionicons name="add" size={18} color={WHITE} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Category cards */}
+      <FlatList
+        data={CATEGORIES}
+        keyExtractor={c => c.key}
+        numColumns={2}
+        contentContainerStyle={{ padding: 12, gap: 10 }}
+        columnWrapperStyle={{ gap: 10 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={[cc.card, { backgroundColor: item.bg }]} onPress={() => setActiveCategory(item)} activeOpacity={0.85}>
+            <View style={[cc.iconWrap, { backgroundColor: item.color + '20' }]}>
+              <Ionicons name={item.icon} size={24} color={item.color} />
+            </View>
+            <Text style={[cc.label, { color: item.color }]}>{item.label}</Text>
+            <Text style={cc.subtitle}>{item.subtitle}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  )
+}
+
+const main = StyleSheet.create({
+  header: { backgroundColor: PURPLE, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title:  { fontSize: 22, fontWeight: '800', color: WHITE },
+  addBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+})
+
+const cc = StyleSheet.create({
+  card:     { flex: 1, backgroundColor: WHITE, borderRadius: 16, padding: 16, gap: 8, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6 },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  label:    { fontSize: 14, fontWeight: '800' },
+  subtitle: { fontSize: 12, color: MUTED },
+})
+
+const lc = StyleSheet.create({
+  card:       { backgroundColor: WHITE, borderRadius: 14, padding: 14, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  top:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  avatar:     { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 14, fontWeight: '800' },
+  name:       { fontSize: 14, fontWeight: '700', color: TEXT },
+  sub:        { fontSize: 12, color: MUTED },
+  tagPill:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  tagText:    { fontSize: 11, fontWeight: '800' },
+  bottom:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  stagePill:  { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  stageText:  { fontSize: 10, fontWeight: '700' },
+  followUp:   { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  followUpText: { fontSize: 10, color: '#f59e0b', fontWeight: '600' },
+  callBtn:    { width: 30, height: 30, borderRadius: 8, backgroundColor: PURPLE + '10', alignItems: 'center', justifyContent: 'center' },
+})
+
+const cl = StyleSheet.create({
+  header:     { backgroundColor: PURPLE, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn:    { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  title:      { fontSize: 18, fontWeight: '800', color: WHITE },
+  subtitle:   { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+  searchBar:  { flexDirection: 'row', alignItems: 'center', gap: 10, margin: 12, backgroundColor: WHITE, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4 },
+  searchInput:{ flex: 1, fontSize: 14, color: TEXT },
+  fab:        { position: 'absolute', bottom: 24, left: 20, right: 20, backgroundColor: PURPLE, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14, elevation: 8, shadowColor: PURPLE, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10 },
+  fabText:    { color: WHITE, fontSize: 14, fontWeight: '800' },
 })

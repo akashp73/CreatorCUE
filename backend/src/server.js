@@ -52,6 +52,7 @@ app.use('/api/institution', require('./routes/institution.routes'));
 app.use('/api/assignment', require('./routes/assignment.routes'));
 app.use('/api/calls', require('./routes/call.routes'));
 app.use('/api/team', require('./routes/team.routes'));
+app.use('/api/users', require('./routes/team.routes'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

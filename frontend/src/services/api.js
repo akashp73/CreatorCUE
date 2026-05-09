@@ -51,6 +51,7 @@ export const leadsApi = {
   assign: (id, uid) => api.put(`/leads/${id}/assign`, { assigned_to: uid }),
   setEnrollmentStage: (id, stage) => api.put(`/leads/${id}/enrollment-stage`, { stage }),
   toggleVerify: (id) => api.put(`/leads/${id}/verify`),
+  dispose: (id, d) => api.patch(`/leads/${id}/dispose`, d),
   bulkImport: (file) => { const f = new FormData(); f.append('file', file); return api.post('/leads/bulk-import', f) },
   exportCsv: (p) => api.get('/leads/export', { params: p, responseType: 'blob' }),
   inviteToPortal: (id) => api.post(`/leads/${id}/invite-to-portal`),

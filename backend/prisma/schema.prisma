@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -107,9 +107,12 @@ model Lead {
   course_interested String?
   source            String    @default("OTHER")
   status            String    @default("NEW")
-  enrollment_stage  String    @default("NEW")
-  is_verified       Boolean   @default(false)
-  follow_up_date    DateTime?
+  enrollment_stage   String    @default("NEW")
+  is_verified        Boolean   @default(false)
+  lead_tag           String    @default("COLD")
+  follow_up_date     DateTime?
+  last_call_date     DateTime?
+  last_call_outcome  String?
   activity_score    Int       @default(0)
   score_label       String    @default("COLD")
   last_activity_at  DateTime  @default(now())
@@ -325,10 +328,12 @@ model AssignmentRule {
 }
 
 model BreakLog {
-  id         String    @id @default(uuid())
-  user_id    String
-  start_at   DateTime  @default(now())
-  end_at     DateTime?
-  reason     String?
-  user       User      @relation(fields: [user_id], references: [id])
+  id             String    @id @default(uuid())
+  user_id        String
+  institution_id String
+  status         String    @default("ON_BREAK")
+  started_at     DateTime  @default(now())
+  ended_at       DateTime?
+  reason         String?
+  user           User      @relation(fields: [user_id], references: [id])
 }

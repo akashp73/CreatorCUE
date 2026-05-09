@@ -6,17 +6,15 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useCallStore } from '../store/callStore'
 
-const BG      = '#0f172a'
-const SURFACE = 'rgba(255,255,255,0.06)'
-const BORDER  = 'rgba(255,255,255,0.1)'
-const ACCENT  = '#6366f1'
-const SUCCESS = '#10b981'
-const GOLD    = '#f59e0b'
-const WA_GREEN= '#25D366'
-const TEXT    = '#f1f5f9'
-const MUTED   = '#94a3b8'
+const PURPLE = '#4a1a8a'
+const BG     = '#f0f0f6'
+const WHITE  = '#ffffff'
+const TEXT   = '#1a1a2e'
+const MUTED  = '#6b7280'
+const WA     = '#25D366'
+const GOLD   = '#f59e0b'
 
-const PRESET_VARIABLES = ['{name}', '{course}', '{phone}', '{institute}', '{date}']
+const PRESET_VARS = ['{name}', '{course}', '{phone}', '{institute}', '{date}']
 
 const DEFAULT_TEMPLATE = `Hi {name},
 
@@ -25,7 +23,7 @@ Thank you for your enquiry about {course}.
 We will connect with you shortly to help you with the admission process.
 
 Regards,
-Team`
+EduCRM Team`
 
 let CallDetector = null
 try { CallDetector = require('react-native-call-detection') } catch {}
@@ -35,8 +33,9 @@ export default function CallSettingsScreen({ navigation }) {
   const [localTemplate, setLocalTemplate] = useState(template || DEFAULT_TEMPLATE)
   const [localCooldown, setLocalCooldown] = useState(String(cooldown || 60))
   const [saved, setSaved] = useState(false)
-
-  const callDetectionAvailable = !!CallDetector
+  const [incomingEnabled, setIncomingEnabled] = useState(true)
+  const [outgoingEnabled, setOutgoingEnabled] = useState(true)
+  const [missedEnabled, setMissedEnabled] = useState(false)
 
   const save = () => {
     setTemplate(localTemplate)
@@ -45,134 +44,107 @@ export default function CallSettingsScreen({ navigation }) {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const insertVariable = (v) => {
-    setLocalTemplate(t => t + v)
+  const testWA = () => {
+    const msg = localTemplate.replace(/{name}/g, 'Test User').replace(/{course}/g, 'MBA')
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => Alert.alert('WhatsApp not installed'))
   }
-
-  const testWhatsApp = () => {
-    const msg = localTemplate.replace(/{name}/g, 'Test User').replace(/{course}/g, 'MBA').replace(/{phone}/g, '9999999999')
-    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
-      Alert.alert('WhatsApp not installed', 'Please install WhatsApp to use this feature')
-    })
-  }
-
-  const sectionTitle = (title, icon) => (
-    <View style={sec.titleRow}>
-      <Ionicons name={icon} size={16} color={ACCENT} />
-      <Text style={sec.title}>{title}</Text>
-    </View>
-  )
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
-      <StatusBar barStyle="light-content" backgroundColor={BG} />
+      <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
 
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={20} color={TEXT} />
+          <Ionicons name="arrow-back" size={20} color="white" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Auto WhatsApp Settings</Text>
-        <TouchableOpacity onPress={save} style={[s.saveBtn, saved && { backgroundColor: SUCCESS + '30' }]}>
-          <Text style={[s.saveBtnText, { color: saved ? SUCCESS : ACCENT }]}>{saved ? 'Saved!' : 'Save'}</Text>
+        <Text style={s.title}>Auto WhatsApp Settings</Text>
+        <TouchableOpacity onPress={save} style={[s.saveBtn, saved && { backgroundColor: '#10b981' + '20' }]}>
+          <Text style={[s.saveBtnText, { color: saved ? '#10b981' : PURPLE }]}>{saved ? 'Saved!' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={s.root} contentContainerStyle={s.content}>
-        {/* Auto WhatsApp Toggle */}
-        <View style={s.card}>
-          {sectionTitle('Auto WhatsApp After Call', 'logo-whatsapp')}
-          <Text style={s.desc}>
-            After a call ends, automatically open WhatsApp with a pre-filled message template for the lead you just called.
-          </Text>
-          <View style={s.toggleRow}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
+        {/* Main toggle */}
+        <View style={card.c}>
+          <View style={card.row}>
             <View>
-              <Text style={s.toggleLabel}>Enable Auto WhatsApp</Text>
-              <Text style={s.toggleSub}>{autoWhatsApp ? 'Active — opens after each call' : 'Disabled'}</Text>
+              <Text style={card.title}>Auto WhatsApp After Call</Text>
+              <Text style={card.sub}>{autoWhatsApp ? 'Active' : 'Disabled'}</Text>
             </View>
-            <Switch
-              value={autoWhatsApp}
-              onValueChange={setAutoWhatsApp}
-              trackColor={{ false: '#334155', true: WA_GREEN + '60' }}
-              thumbColor={autoWhatsApp ? WA_GREEN : '#64748b'}
-            />
+            <Switch value={autoWhatsApp} onValueChange={setAutoWhatsApp} trackColor={{ false: '#e5e7eb', true: WA + '80' }} thumbColor={autoWhatsApp ? WA : '#9ca3af'} />
           </View>
-
-          {!callDetectionAvailable && (
-            <View style={s.warningBox}>
+          {!CallDetector && (
+            <View style={card.warning}>
               <Ionicons name="warning-outline" size={14} color={GOLD} />
-              <Text style={[s.warningText, { color: GOLD }]}>
-                Call detection requires a custom build. Currently using manual trigger mode.
-              </Text>
+              <Text style={card.warningText}>Call detection requires a custom build. Using manual mode.</Text>
             </View>
           )}
         </View>
 
-        {/* Cooldown */}
-        <View style={s.card}>
-          {sectionTitle('Cooldown Period', 'timer-outline')}
-          <Text style={s.desc}>Minimum seconds between auto-WhatsApp triggers to avoid duplicates.</Text>
-          <View style={s.row}>
-            <TextInput
-              style={[s.input, { flex: 1 }]}
-              value={localCooldown}
-              onChangeText={setLocalCooldown}
-              keyboardType="numeric"
-              placeholder="60"
-              placeholderTextColor="#475569"
-            />
-            <Text style={{ color: MUTED, fontSize: 14 }}>seconds</Text>
-          </View>
+        {/* Call type toggles */}
+        <View style={card.c}>
+          <Text style={card.sectionTitle}>Trigger on call type</Text>
+          {[
+            { label: 'Outgoing Calls', value: outgoingEnabled, onChange: setOutgoingEnabled },
+            { label: 'Incoming Calls', value: incomingEnabled, onChange: setIncomingEnabled },
+            { label: 'Missed Calls', value: missedEnabled, onChange: setMissedEnabled },
+          ].map((opt, i) => (
+            <View key={i} style={[card.row, i > 0 && { borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 12, marginTop: 12 }]}>
+              <Text style={card.optLabel}>{opt.label}</Text>
+              <Switch value={opt.value} onValueChange={opt.onChange} trackColor={{ false: '#e5e7eb', true: PURPLE + '60' }} thumbColor={opt.value ? PURPLE : '#9ca3af'} />
+            </View>
+          ))}
         </View>
 
-        {/* Template Editor */}
-        <View style={s.card}>
-          {sectionTitle('Message Template', 'create-outline')}
-          <Text style={s.desc}>Use variables to personalise each message automatically.</Text>
+        {/* Cooldown */}
+        <View style={card.c}>
+          <Text style={card.sectionTitle}>Cooldown (seconds)</Text>
+          <TextInput style={card.input} value={localCooldown} onChangeText={setLocalCooldown} keyboardType="numeric" placeholderTextColor={MUTED} />
+        </View>
 
-          <View style={s.variableRow}>
-            {PRESET_VARIABLES.map(v => (
-              <TouchableOpacity key={v} onPress={() => insertVariable(v)} style={s.variablePill}>
-                <Text style={s.variablePillText}>{v}</Text>
+        {/* Template editor */}
+        <View style={card.c}>
+          <Text style={card.sectionTitle}>Message Template</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {PRESET_VARS.map(v => (
+              <TouchableOpacity key={v} onPress={() => setLocalTemplate(t => t + v)} style={card.varPill}>
+                <Text style={card.varText}>{v}</Text>
               </TouchableOpacity>
             ))}
           </View>
-
           <TextInput
-            style={s.templateInput}
+            style={card.templateInput}
             value={localTemplate}
             onChangeText={setLocalTemplate}
             multiline
             textAlignVertical="top"
             placeholder="Write your WhatsApp template..."
-            placeholderTextColor="#475569"
+            placeholderTextColor={MUTED}
           />
-
-          <TouchableOpacity style={s.testBtn} onPress={testWhatsApp}>
-            <Ionicons name="send-outline" size={15} color={WA_GREEN} />
-            <Text style={[s.testBtnText, { color: WA_GREEN }]}>Test Template in WhatsApp</Text>
+          <TouchableOpacity style={card.testBtn} onPress={testWA}>
+            <Ionicons name="logo-whatsapp" size={16} color={WA} />
+            <Text style={[card.testBtnText, { color: WA }]}>Test in WhatsApp</Text>
           </TouchableOpacity>
         </View>
 
         {/* How it works */}
-        <View style={s.card}>
-          {sectionTitle('How It Works', 'information-circle-outline')}
-          <View style={{ gap: 10 }}>
-            {[
-              { icon: 'call-outline', text: 'You make or receive a call to/from a lead', color: ACCENT },
-              { icon: 'close-circle-outline', text: 'Call ends', color: MUTED },
-              { icon: 'search-outline', text: 'App detects the phone number and finds the lead', color: '#3b82f6' },
-              { icon: 'logo-whatsapp', text: 'WhatsApp opens with the filled template', color: WA_GREEN },
-              { icon: 'checkmark-circle-outline', text: 'Call is automatically logged to CRM', color: SUCCESS },
-            ].map((step, i) => (
-              <View key={i} style={s.stepRow}>
-                <View style={[s.stepNum, { backgroundColor: step.color + '18' }]}>
-                  <Ionicons name={step.icon} size={14} color={step.color} />
-                </View>
-                <Text style={s.stepText}>{step.text}</Text>
+        <View style={card.c}>
+          <Text style={card.sectionTitle}>How It Works</Text>
+          {[
+            { icon: 'call-outline', text: 'You call a lead', color: PURPLE },
+            { icon: 'close-outline', text: 'Call ends', color: MUTED },
+            { icon: 'search-outline', text: 'App detects the number', color: '#3b82f6' },
+            { icon: 'logo-whatsapp', text: 'WhatsApp opens with filled template', color: WA },
+            { icon: 'checkmark-circle-outline', text: 'Call logged automatically to CRM', color: '#10b981' },
+          ].map((step, i) => (
+            <View key={i} style={card.stepRow}>
+              <View style={[card.stepIcon, { backgroundColor: step.color + '15' }]}>
+                <Ionicons name={step.icon} size={14} color={step.color} />
               </View>
-            ))}
-          </View>
+              <Text style={card.stepText}>{step.text}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -180,34 +152,29 @@ export default function CallSettingsScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root:         { flex: 1 },
-  content:      { padding: 16, paddingBottom: 32, gap: 12 },
-  header:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderBottomWidth: 1, borderBottomColor: BORDER },
-  backBtn:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER },
-  headerTitle:  { flex: 1, fontSize: 16, fontWeight: '800', color: TEXT },
-  saveBtn:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: ACCENT + '50' },
-  saveBtnText:  { fontSize: 13, fontWeight: '700' },
-  card:         { backgroundColor: SURFACE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER, gap: 12 },
-  desc:         { fontSize: 13, color: MUTED, lineHeight: 20 },
-  toggleRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleLabel:  { fontSize: 15, fontWeight: '700', color: TEXT },
-  toggleSub:    { fontSize: 12, color: MUTED, marginTop: 2 },
-  warningBox:   { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 10, backgroundColor: GOLD + '15', borderWidth: 1, borderColor: GOLD + '30' },
-  warningText:  { flex: 1, fontSize: 12, lineHeight: 18 },
-  row:          { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  input:        { borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: TEXT, backgroundColor: 'rgba(255,255,255,0.04)' },
-  variableRow:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  variablePill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: ACCENT + '20', borderWidth: 1, borderColor: ACCENT + '40' },
-  variablePillText: { fontSize: 12, fontWeight: '700', color: '#a5b4fc' },
-  templateInput:{ borderWidth: 1, borderColor: BORDER, borderRadius: 12, padding: 14, fontSize: 14, color: TEXT, backgroundColor: 'rgba(255,255,255,0.04)', minHeight: 160 },
-  testBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, backgroundColor: WA_GREEN + '15', borderWidth: 1, borderColor: WA_GREEN + '30' },
-  testBtnText:  { fontSize: 14, fontWeight: '700' },
-  stepRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepNum:      { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  stepText:     { flex: 1, fontSize: 13, color: TEXT },
+  header:     { backgroundColor: PURPLE, paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn:    { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  title:      { flex: 1, fontSize: 17, fontWeight: '800', color: 'white' },
+  saveBtn:    { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  saveBtnText:{ fontSize: 13, fontWeight: '700', color: 'white' },
 })
 
-const sec = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title:    { fontSize: 14, fontWeight: '800', color: TEXT },
+const card = StyleSheet.create({
+  c:           { backgroundColor: WHITE, borderRadius: 16, padding: 16, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, gap: 8 },
+  row:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title:       { fontSize: 15, fontWeight: '700', color: TEXT },
+  sub:         { fontSize: 12, color: MUTED, marginTop: 2 },
+  sectionTitle:{ fontSize: 13, fontWeight: '800', color: TEXT, marginBottom: 4 },
+  optLabel:    { fontSize: 14, fontWeight: '600', color: TEXT },
+  input:       { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: TEXT, backgroundColor: '#f9fafb' },
+  varPill:     { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: PURPLE + '15', borderWidth: 1, borderColor: PURPLE + '30' },
+  varText:     { fontSize: 12, fontWeight: '700', color: PURPLE },
+  templateInput: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 14, fontSize: 14, color: TEXT, minHeight: 140, backgroundColor: '#f9fafb' },
+  testBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, backgroundColor: WA + '15', borderWidth: 1, borderColor: WA + '30', marginTop: 4 },
+  testBtnText: { fontSize: 13, fontWeight: '700' },
+  warning:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderRadius: 10, backgroundColor: GOLD + '10', borderWidth: 1, borderColor: GOLD + '25', marginTop: 4 },
+  warningText: { flex: 1, fontSize: 12, color: GOLD, lineHeight: 18 },
+  stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepIcon:    { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  stepText:    { flex: 1, fontSize: 13, color: TEXT },
 })

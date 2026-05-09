@@ -44,6 +44,7 @@ export const leadsApi = {
   update: (id, d) => api.put(`/leads/${id}`, d),
   setEnrollmentStage: (id, stage) => api.put(`/leads/${id}/enrollment-stage`, { stage }),
   toggleVerify: (id) => api.put(`/leads/${id}/verify`),
+  dispose: (id, d) => api.patch(`/leads/${id}/dispose`, d),
   getTasks: (id) => api.get(`/leads/${id}/tasks`),
   getNotes: (id) => api.get(`/leads/${id}/notes`),
 }

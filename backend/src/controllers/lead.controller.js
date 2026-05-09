@@ -33,13 +33,21 @@ const getLeads = async (req, res, next) => {
       if (score_min) where.activity_score.gte = parseInt(score_min);
       if (score_max) where.activity_score.lte = parseInt(score_max);
     }
-    const { enrollment_stage, is_verified, follow_up_before, follow_up_after } = req.query;
+    const { enrollment_stage, is_verified, follow_up_before, follow_up_after, lead_tag, never_called, follow_up_today } = req.query;
     if (enrollment_stage) where.enrollment_stage = enrollment_stage;
+    if (lead_tag) where.lead_tag = lead_tag;
     if (is_verified !== undefined && is_verified !== '') where.is_verified = is_verified === 'true';
     if (follow_up_before || follow_up_after) {
       where.follow_up_date = {};
       if (follow_up_after) where.follow_up_date.gte = new Date(follow_up_after);
       if (follow_up_before) where.follow_up_date.lte = new Date(follow_up_before);
+    }
+    if (never_called === 'true') where.last_call_date = null;
+    if (follow_up_today === 'true') {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(todayStart.getTime() + 86400000);
+      where.follow_up_date = { gte: todayStart, lt: todayEnd };
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -138,7 +146,8 @@ const updateLead = async (req, res, next) => {
 
     const {
       name, email, phone, city, course_interested, source, assigned_to, status,
-      activity_score, score_label, portal_invited, enrollment_stage, is_verified, follow_up_date,
+      activity_score, score_label, portal_invited, enrollment_stage, is_verified,
+      follow_up_date, lead_tag, last_call_date, last_call_outcome,
     } = req.body;
 
     const lead = await prisma.lead.update({
@@ -158,6 +167,9 @@ const updateLead = async (req, res, next) => {
         ...(enrollment_stage !== undefined && { enrollment_stage }),
         ...(is_verified !== undefined && { is_verified }),
         ...(follow_up_date !== undefined && { follow_up_date: follow_up_date ? new Date(follow_up_date) : null }),
+        ...(lead_tag !== undefined && { lead_tag }),
+        ...(last_call_date !== undefined && { last_call_date: last_call_date ? new Date(last_call_date) : null }),
+        ...(last_call_outcome !== undefined && { last_call_outcome }),
       },
     });
 
