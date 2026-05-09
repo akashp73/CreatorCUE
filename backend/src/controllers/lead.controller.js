@@ -8,6 +8,7 @@ const getLeads = async (req, res, next) => {
     const {
       page = 1, limit = 20, search, status, source, score_label,
       assigned_to, course_interested, city, sort = 'created_at', order = 'desc',
+      score_min, score_max,
     } = req.query;
 
     const where = { institution_id, is_deleted: false };
@@ -25,6 +26,11 @@ const getLeads = async (req, res, next) => {
     if (assigned_to) where.assigned_to = assigned_to;
     if (course_interested) where.course_interested = { contains: course_interested };
     if (city) where.city = { contains: city };
+    if (score_min || score_max) {
+      where.activity_score = {};
+      if (score_min) where.activity_score.gte = parseInt(score_min);
+      if (score_max) where.activity_score.lte = parseInt(score_max);
+    }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [leads, total] = await Promise.all([
@@ -241,4 +247,29 @@ const assignLead = async (req, res, next) => {
   }
 };
 
-module.exports = { getLeads, getLead, createLead, updateLead, deleteLead, bulkImport, getLeadActivity, assignLead };
+const exportLeads = async (req, res, next) => {
+  try {
+    const { Parser } = require('json2csv');
+    const { institution_id, role, id: user_id } = req.user;
+    const { search, status, source, score_min, score_max } = req.query;
+    const where = { institution_id, is_deleted: false };
+    if (role === 'COUNSELLOR') where.assigned_to = user_id;
+    if (search) where.OR = [{ name: { contains: search } }, { phone: { contains: search } }];
+    if (status) where.status = status;
+    if (source) where.source = source;
+    if (score_min || score_max) {
+      where.activity_score = {};
+      if (score_min) where.activity_score.gte = parseInt(score_min);
+      if (score_max) where.activity_score.lte = parseInt(score_max);
+    }
+    const leads = await prisma.lead.findMany({ where, include: { assignee: { select: { name: true } } }, orderBy: { created_at: 'desc' } });
+    const rows = leads.map(l => ({ name: l.name, email: l.email || '', phone: l.phone, city: l.city || '', course: l.course_interested || '', source: l.source, status: l.status, score: l.activity_score, assigned_to: l.assignee?.name || '', created_at: l.created_at.toISOString() }));
+    if (!rows.length) return res.status(404).json({ error: 'No data' });
+    const parser = new Parser();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=leads.csv');
+    res.send(parser.parse(rows));
+  } catch (err) { next(err); }
+};
+
+module.exports = { getLeads, getLead, createLead, updateLead, deleteLead, bulkImport, getLeadActivity, assignLead, exportLeads };

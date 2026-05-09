@@ -76,6 +76,7 @@ export const notesApi = {
 export const dashboardApi = {
   getStats: () => api.get('/dashboard/stats'),
   getHotLeads: () => api.get('/dashboard/hot-leads'),
+  getReengagement: () => api.get('/dashboard/reengagement'),
 }
 
 // ── Communications ────────────────────────────────────────────
@@ -135,7 +136,17 @@ export const reportsApi = {
   agentPerf: (p) => api.get('/reports/agent-performance', { params: p }),
   funnel: (p) => api.get('/reports/funnel', { params: p }),
   sourceRoi: (p) => api.get('/reports/source-roi', { params: p }),
+  forecast: () => api.get('/reports/forecast'),
   export: (p) => api.get('/reports/export', { params: p, responseType: 'blob' }),
+}
+
+// ── Assignment ────────────────────────────────────────────────
+export const assignmentApi = {
+  getConfig: () => api.get('/assignment/config'),
+  updateConfig: (d) => api.put('/assignment/config', d),
+  getRules: () => api.get('/assignment/rules'),
+  addRule: (d) => api.post('/assignment/rules', d),
+  deleteRule: (id) => api.delete(`/assignment/rules/${id}`),
 }
 
 // ── Billing ───────────────────────────────────────────────────

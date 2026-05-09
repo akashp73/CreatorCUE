@@ -28,6 +28,7 @@ const SETTINGS_NAV = [
   { to: '/settings/whatsapp-templates', label: 'WhatsApp Templates' },
   { to: '/settings/users', label: 'Users' },
   { to: '/settings/branding', label: 'Branding' },
+  { to: '/settings/assignment', label: 'Lead Assignment' },
   { to: '/settings/webhooks', label: 'Webhooks & API' },
 ]
 
@@ -189,6 +190,7 @@ export default function Layout({ children }) {
     '/settings/scoring': 'Score Rules', '/settings/email-templates': 'Email Templates',
     '/settings/whatsapp-templates': 'WhatsApp Templates',
     '/settings/users': 'Team Users', '/settings/branding': 'Branding',
+    '/settings/assignment': 'Lead Assignment',
     '/settings/webhooks': 'Webhooks & API',
   }
   const title = PAGE_TITLES[location.pathname] || 'EduCRM'

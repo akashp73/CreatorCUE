@@ -2,7 +2,7 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'
-import { Users, Flame, CheckSquare, TrendingUp, Phone, ArrowUpRight } from 'lucide-react'
+import { Users, Flame, CheckSquare, TrendingUp, Phone, ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { dashboardApi, reportsApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import StatCard from '../components/StatCard'
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading: sl } = useQuery({ queryKey: ['dash-stats'], queryFn: () => dashboardApi.getStats().then(r => r.data) })
   const { data: hotLeads = [], isLoading: hl } = useQuery({ queryKey: ['hot-leads'], queryFn: () => dashboardApi.getHotLeads().then(r => r.data) })
   const { data: agents = [] } = useQuery({ queryKey: ['agent-perf'], queryFn: () => reportsApi.agentPerf({}).then(r => r.data), enabled: isManager })
+  const { data: reengageLeads = [] } = useQuery({ queryKey: ['reengagement'], queryFn: () => dashboardApi.getReengagement().then(r => r.data) })
 
   if (sl) return <Spinner />
 
@@ -25,6 +26,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Re-engagement alert */}
+      {stats?.reengagement_leads > 0 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">
+              {stats.reengagement_leads} lead{stats.reengagement_leads > 1 ? 's' : ''} need re-engagement
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">No activity in 7+ days. Follow-up tasks are created daily at 9am.</p>
+          </div>
+          <Link to="/tasks" className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex-shrink-0 underline">View Tasks</Link>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Total Leads" value={stats?.total_leads} color="#4f46e5" to="/leads" />
@@ -105,6 +120,35 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Re-engagement leads list */}
+      {reengageLeads.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <AlertTriangle size={15} className="text-amber-500" /> Needs Re-engagement
+            </h3>
+            <Link to="/leads" className="text-xs font-medium text-indigo-600 hover:opacity-80">View all</Link>
+          </div>
+          <div className="space-y-2">
+            {reengageLeads.slice(0, 5).map(lead => {
+              const daysInactive = Math.floor((Date.now() - new Date(lead.last_activity_at).getTime()) / 86400000)
+              return (
+                <div key={lead.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold flex-shrink-0">
+                    {lead.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/leads/${lead.id}`} className="text-sm font-medium text-gray-800 hover:text-indigo-600 transition-colors">{lead.name}</Link>
+                    <p className="text-xs text-gray-400">{lead.course_interested || lead.source} · {lead.assignee?.name || 'Unassigned'}</p>
+                  </div>
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">{daysInactive}d inactive</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Agent leaderboard (ADMIN/MANAGER only) */}
       {isManager && agents.length > 0 && (

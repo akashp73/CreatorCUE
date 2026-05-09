@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Phone, Mail, MapPin, BookOpen, Activity, User, Calendar, Plus, Check, Flame, Thermometer, Snowflake, MessageCircle, Send, FileText, Upload, Trash2, IndianRupee, Bell } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MapPin, BookOpen, Activity, User, Calendar, Plus, Check, Flame, Thermometer, Snowflake, MessageCircle, Send, FileText, Upload, Trash2, IndianRupee, Bell, UserPlus, RefreshCw, StickyNote, Zap, TrendingDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { leadsApi, notesApi, tasksApi, commsApi, emailTplApi, waTplApi, paymentsApi } from '../services/api'
 import ScoreBadge from '../components/ScoreBadge'
@@ -9,6 +9,120 @@ import Spinner from '../components/Spinner'
 
 const STATUSES = ['NEW','CONTACTED','APPLIED','QUALIFIED','ENROLLED','LOST']
 const PAY_STATUS = { PENDING:'bg-yellow-100 text-yellow-700', PAID:'bg-green-100 text-green-700', FAILED:'bg-red-100 text-red-600', REFUNDED:'bg-gray-100 text-gray-600' }
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function activityIcon(type) {
+  if (type === 'form_fill') return { Icon: UserPlus, color: '#4f46e5', bg: '#eef2ff' }
+  if (type === 'score_decay') return { Icon: TrendingDown, color: '#E53E3E', bg: '#FEE2E2' }
+  if (type.includes('email')) return { Icon: Mail, color: '#3B82F6', bg: '#EFF6FF' }
+  if (type.includes('whatsapp')) return { Icon: MessageCircle, color: '#25D366', bg: '#F0FDF4' }
+  if (type.includes('payment')) return { Icon: IndianRupee, color: '#10B981', bg: '#D1FAE5' }
+  if (type.includes('status')) return { Icon: RefreshCw, color: '#F59E0B', bg: '#FEF3C7' }
+  if (type.includes('video') || type.includes('module') || type.includes('webinar')) return { Icon: Activity, color: '#8B5CF6', bg: '#EDE9FE' }
+  return { Icon: Zap, color: '#4f46e5', bg: '#EEF2FF' }
+}
+
+function channelIcon(channel) {
+  if (channel === 'WHATSAPP') return { Icon: MessageCircle, color: '#25D366', bg: '#F0FDF4', label: 'WhatsApp sent' }
+  if (channel === 'EMAIL') return { Icon: Mail, color: '#3B82F6', bg: '#EFF6FF', label: 'Email sent' }
+  if (channel === 'PHONE') return { Icon: Phone, color: '#10B981', bg: '#D1FAE5', label: 'Called' }
+  return { Icon: Send, color: '#6B7280', bg: '#F3F4F6', label: 'Message sent' }
+}
+
+function buildTimeline(lead, notes, comms, payments) {
+  const events = []
+
+  // Lead creation
+  events.push({
+    id: 'created', ts: new Date(lead.created_at),
+    Icon: UserPlus, color: '#4f46e5', bg: '#eef2ff',
+    title: `Lead captured from ${lead.source}`,
+    desc: lead.assignee ? `Assigned to ${lead.assignee.name}` : 'Unassigned',
+  })
+
+  // Activity logs
+  ;(lead.activityLogs || []).forEach(log => {
+    const { Icon, color, bg } = activityIcon(log.activity_type)
+    const clean = (log.description || '').replace(/\[key:[^\]]*\]/g, '').trim()
+    events.push({
+      id: `act-${log.id}`, ts: new Date(log.created_at),
+      Icon, color, bg,
+      title: log.activity_type.replace(/_/g, ' '),
+      desc: clean,
+      badge: log.points_added !== 0 ? `${log.points_added > 0 ? '+' : ''}${log.points_added} pts` : null,
+      badgeColor: log.points_added >= 0 ? '#10B981' : '#E53E3E',
+    })
+  })
+
+  // Notes
+  ;(notes || []).forEach(note => {
+    const isDup = note.content.startsWith('Also came from')
+    events.push({
+      id: `note-${note.id}`, ts: new Date(note.created_at),
+      Icon: StickyNote || FileText, color: isDup ? '#F59E0B' : '#6B7280', bg: isDup ? '#FEF9C3' : '#F9FAFB',
+      title: isDup ? note.content : `Note by ${note.author?.name || 'team'}`,
+      desc: isDup ? '' : note.content.slice(0, 100) + (note.content.length > 100 ? '…' : ''),
+    })
+  })
+
+  // Comm logs
+  ;(comms || []).forEach(comm => {
+    const { Icon, color, bg, label } = channelIcon(comm.channel)
+    events.push({
+      id: `comm-${comm.id}`, ts: new Date(comm.sent_at),
+      Icon, color, bg,
+      title: label,
+      desc: (comm.content || '').slice(0, 80) + ((comm.content || '').length > 80 ? '…' : ''),
+    })
+  })
+
+  // Payments
+  ;(payments || []).forEach(pay => {
+    const isPaid = pay.status === 'PAID'
+    events.push({
+      id: `pay-${pay.id}`, ts: new Date(pay.paid_at || pay.created_at),
+      Icon: IndianRupee, color: isPaid ? '#10B981' : '#F59E0B', bg: isPaid ? '#D1FAE5' : '#FEF3C7',
+      title: `Payment ${pay.status.toLowerCase()}: ₹${pay.amount.toLocaleString('en-IN')}`,
+      desc: pay.payment_type,
+    })
+  })
+
+  return events.sort((a, b) => b.ts - a.ts)
+}
+
+function LeadTimeline({ lead, notes, comms, payments }) {
+  const events = useMemo(() => buildTimeline(lead, notes, comms, payments), [lead, notes, comms, payments])
+  if (!events.length) return <p className="text-sm text-gray-400 text-center py-8">No activity yet</p>
+  return (
+    <div className="relative">
+      <div className="absolute left-3.5 top-4 bottom-0 w-px bg-gray-100" />
+      <div className="space-y-4">
+        {events.map((ev, i) => {
+          const Icon = ev.Icon || Zap
+          return (
+            <div key={ev.id} className="flex gap-3 relative">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-10" style={{ backgroundColor: ev.bg }}>
+                <Icon size={13} style={{ color: ev.color }} />
+              </div>
+              <div className="flex-1 pb-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-gray-800 leading-snug capitalize">{ev.title}</p>
+                  {ev.badge && (
+                    <span className="text-xs font-bold flex-shrink-0 px-1.5 py-0.5 rounded-full" style={{ color: ev.badgeColor, backgroundColor: ev.badgeColor + '18' }}>
+                      {ev.badge}
+                    </span>
+                  )}
+                </div>
+                {ev.desc && <p className="text-xs text-gray-500 mt-0.5">{ev.desc}</p>}
+                <p className="text-xs text-gray-400 mt-0.5">{ev.ts.toLocaleString()}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function TabBtn({ active, onClick, children }) {
   return (
@@ -122,7 +236,24 @@ export default function LeadProfilePage() {
             {lead.email && <div className="flex items-center gap-2 text-sm text-gray-600"><Mail size={14} className="text-gray-400 flex-shrink-0"/><span className="truncate">{lead.email}</span></div>}
             {lead.city && <div className="flex items-center gap-2 text-sm text-gray-600"><MapPin size={14} className="text-gray-400 flex-shrink-0"/>{lead.city}</div>}
             {lead.course_interested && <div className="flex items-center gap-2 text-sm text-gray-600"><BookOpen size={14} className="text-gray-400 flex-shrink-0"/>{lead.course_interested}</div>}
-            <div className="flex items-center gap-2 text-sm text-gray-600"><Activity size={14} className="text-gray-400 flex-shrink-0"/>Source: <span className="font-medium">{lead.source}</span></div>
+            <div className="flex items-start gap-2 text-sm text-gray-600">
+              <Activity size={14} className="text-gray-400 flex-shrink-0 mt-0.5"/>
+              <div>
+                <span>Source: <span className="font-medium">{lead.source}</span></span>
+                {(() => {
+                  const extra = (notes || []).filter(n => n.content.startsWith('Also came from'))
+                    .map(n => { const m = n.content.match(/Also came from (\w+)/); return m?.[1] })
+                    .filter(Boolean)
+                  return extra.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {extra.map((src, i) => (
+                        <span key={i} className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">+{src}</span>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
+              </div>
+            </div>
             <div className="flex items-center gap-2 text-sm text-gray-600"><User size={14} className="text-gray-400 flex-shrink-0"/>Assigned: <span className="font-medium">{lead.assignee?.name || 'Unassigned'}</span></div>
             <div className="pt-2 border-t border-gray-100">
               <label className="text-xs font-medium text-gray-500 mb-1 block">Status</label>
@@ -160,26 +291,7 @@ export default function LeadProfilePage() {
 
           <div className="p-5 overflow-y-auto max-h-[600px]">
             {/* Timeline */}
-            {tab === 'timeline' && (
-              <div className="space-y-3">
-                {actLog.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No activity yet</p>}
-                {actLog.map(log => (
-                  <div key={log.id} className="flex gap-3">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{backgroundColor: log.points_added > 0 ? '#DCFCE7' : '#FEE2E2'}}>
-                      <Activity size={13} style={{color: log.points_added > 0 ? '#16A34A' : '#DC2626'}}/>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-800">{log.activity_type.replace(/_/g,' ')}</p>
-                        <span className={`text-xs font-semibold ${log.points_added >= 0 ? 'text-green-600' : 'text-red-500'}`}>{log.points_added >= 0 ? '+' : ''}{log.points_added}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">{log.description}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{new Date(log.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {tab === 'timeline' && <LeadTimeline lead={lead} notes={notes} comms={comms} payments={payments} />}
 
             {/* Notes */}
             {tab === 'notes' && (

@@ -12,7 +12,6 @@ function dateWhere(from, to) {
 async function overview(req, res) {
   const iid = req.user.institution_id;
   const created_at = dateWhere(req.query.date_from, req.query.date_to);
-
   const [total, enrolled, paidRev, avgScore, byStatus, bySource] = await Promise.all([
     prisma.lead.count({ where: { institution_id: iid, is_deleted: false, created_at } }),
     prisma.lead.count({ where: { institution_id: iid, is_deleted: false, status: 'ENROLLED', created_at } }),
@@ -21,7 +20,6 @@ async function overview(req, res) {
     prisma.lead.groupBy({ by: ['status'], where: { institution_id: iid, is_deleted: false, created_at }, _count: { _all: true } }),
     prisma.lead.groupBy({ by: ['source'], where: { institution_id: iid, is_deleted: false, created_at }, _count: { _all: true } }),
   ]);
-
   res.json({
     total_leads: total,
     enrolled_leads: enrolled,
@@ -49,15 +47,28 @@ async function agentPerformance(req, res) {
 
 async function funnel(req, res) {
   const iid = req.user.institution_id;
+  const { date_from, date_to } = req.query;
+  const dateFilter = (date_from || date_to) ? dateWhere(date_from, date_to) : undefined;
+
   const stages = ['NEW', 'CONTACTED', 'APPLIED', 'QUALIFIED', 'ENROLLED'];
-  const counts = await Promise.all(stages.map(s => prisma.lead.count({ where: { institution_id: iid, is_deleted: false, status: s } })));
-  const total = counts[0] || 1;
+  const counts = await Promise.all(stages.map(s =>
+    prisma.lead.count({ where: { institution_id: iid, is_deleted: false, status: s, ...(dateFilter && { created_at: dateFilter }) } })
+  ));
+
+  const total = counts.reduce((a, b) => a + b, 0) || 1;
+  const maxCount = Math.max(...counts, 1);
+
   const result = stages.map((stage, i) => ({
-    stage, count: counts[i],
-    pct: ((counts[i] / total) * 100).toFixed(1),
-    drop_off: i > 0 && counts[i - 1] > 0 ? (((counts[i - 1] - counts[i]) / counts[i - 1]) * 100).toFixed(1) : null,
+    stage,
+    count: counts[i],
+    pct_of_total: ((counts[i] / total) * 100).toFixed(1),
+    pct_of_max: ((counts[i] / maxCount) * 100).toFixed(1),
+    drop_off: i > 0 && counts[i - 1] > 0
+      ? (((counts[i - 1] - counts[i]) / counts[i - 1]) * 100).toFixed(1)
+      : null,
   }));
-  res.json({ stages: result, total_entered: counts[0] });
+
+  res.json({ stages: result, total_leads: total });
 }
 
 async function sourceRoi(req, res) {
@@ -75,11 +86,44 @@ async function sourceRoi(req, res) {
   res.json(results.filter(r => r.total_leads > 0));
 }
 
+async function revenueForecast(req, res) {
+  const iid = req.user.institution_id;
+
+  const [totalLeads, enrolledLeads, paidRev, pipelineLeads, lastMonthEnrolled] = await Promise.all([
+    prisma.lead.count({ where: { institution_id: iid, is_deleted: false } }),
+    prisma.lead.count({ where: { institution_id: iid, is_deleted: false, status: 'ENROLLED' } }),
+    prisma.payment.aggregate({ where: { institution_id: iid, status: 'PAID' }, _sum: { amount: true } }),
+    prisma.lead.count({ where: { institution_id: iid, is_deleted: false, status: { in: ['APPLIED', 'QUALIFIED'] } } }),
+    prisma.lead.count({
+      where: {
+        institution_id: iid, is_deleted: false, status: 'ENROLLED',
+        updated_at: { gte: new Date(Date.now() - 30 * 86400000) },
+      },
+    }),
+  ]);
+
+  const totalRevenue = paidRev._sum.amount || 0;
+  const avgFee = enrolledLeads > 0 ? Math.round(totalRevenue / enrolledLeads) : 0;
+  const historicalRate = totalLeads > 0 ? enrolledLeads / totalLeads : 0.05;
+  const predictedRevenue = Math.round(pipelineLeads * historicalRate * avgFee);
+  const confidence = enrolledLeads >= 20 ? 'HIGH' : enrolledLeads >= 5 ? 'MEDIUM' : 'LOW';
+
+  res.json({
+    predicted_revenue: predictedRevenue,
+    pipeline_leads: pipelineLeads,
+    avg_fee: avgFee,
+    historical_conversion_rate: (historicalRate * 100).toFixed(1),
+    last_month_enrolled: lastMonthEnrolled,
+    confidence,
+    enrolled_leads: enrolledLeads,
+    total_data_points: totalLeads,
+  });
+}
+
 async function exportReport(req, res) {
   const { type = 'leads', date_from, date_to } = req.query;
   const iid = req.user.institution_id;
   const created_at = dateWhere(date_from, date_to);
-
   let rows = [], filename = 'report.csv';
   if (type === 'leads') {
     const leads = await prisma.lead.findMany({ where: { institution_id: iid, is_deleted: false, created_at }, include: { assignee: { select: { name: true } } } });
@@ -97,4 +141,4 @@ async function exportReport(req, res) {
   res.send(parser.parse(rows));
 }
 
-module.exports = { overview, agentPerformance, funnel, sourceRoi, exportReport };
+module.exports = { overview, agentPerformance, funnel, sourceRoi, revenueForecast, exportReport };

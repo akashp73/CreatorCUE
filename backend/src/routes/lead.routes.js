@@ -17,6 +17,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 r.use(authenticate);
 r.get('/', lc.getLeads);
+r.get('/export', lc.exportLeads);
 r.post('/', lc.createLead);
 r.post('/bulk-import', upload.single('file'), lc.bulkImport);
 r.get('/:id', lc.getLead);

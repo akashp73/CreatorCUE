@@ -6,5 +6,6 @@ r.get('/overview', c.overview);
 r.get('/agent-performance', c.agentPerformance);
 r.get('/funnel', c.funnel);
 r.get('/source-roi', c.sourceRoi);
+r.get('/forecast', c.revenueForecast);
 r.get('/export', c.exportReport);
 module.exports = r;

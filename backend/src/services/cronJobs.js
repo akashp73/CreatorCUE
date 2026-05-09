@@ -89,6 +89,43 @@ cron.schedule('0 8 * * *', async () => {
   }
 });
 
-console.log('[Cron] Jobs scheduled: score decay, payment reminders, overdue tasks');
+// Daily at 9am: re-engagement tasks for stale assigned leads
+cron.schedule('30 9 * * *', async () => {
+  console.log('[Cron] Running re-engagement task creation...');
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const staleLeads = await prisma.lead.findMany({
+      where: {
+        is_deleted: false,
+        assigned_to: { not: null },
+        status: { notIn: ['ENROLLED', 'LOST'] },
+        last_activity_at: { lt: sevenDaysAgo },
+      },
+    });
+    let created = 0;
+    for (const lead of staleLeads) {
+      const existing = await prisma.task.findFirst({
+        where: { lead_id: lead.id, is_completed: false, title: { startsWith: 'Re-engage:' } },
+      });
+      if (!existing) {
+        const daysInactive = Math.floor((Date.now() - new Date(lead.last_activity_at).getTime()) / 86400000);
+        await prisma.task.create({
+          data: {
+            lead_id: lead.id,
+            assigned_to: lead.assigned_to,
+            title: `Re-engage: ${lead.name} (inactive ${daysInactive}d)`,
+            due_at: new Date(Date.now() + 86400000),
+          },
+        });
+        created++;
+      }
+    }
+    console.log(`[Cron] Re-engagement: created ${created} tasks for ${staleLeads.length} stale leads`);
+  } catch (err) {
+    console.error('[Cron] Re-engagement error:', err.message);
+  }
+});
+
+console.log('[Cron] Jobs scheduled: score decay, payment reminders, overdue tasks, re-engagement');
 
 module.exports = {};

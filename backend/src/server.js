@@ -49,6 +49,7 @@ app.use('/api/super-admin', require('./routes/superAdmin.routes'));
 app.use('/api/portal', require('./routes/portal.routes'));
 app.use('/api/devices', require('./routes/device.routes'));
 app.use('/api/institution', require('./routes/institution.routes'));
+app.use('/api/assignment', require('./routes/assignment.routes'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
