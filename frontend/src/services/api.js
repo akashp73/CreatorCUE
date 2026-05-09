@@ -159,6 +159,22 @@ export const brandingApi = {
   uploadLogo: (file) => { const f = new FormData(); f.append('logo', file); return api.post('/institution/upload-logo', f) },
 }
 
+// ── Institution ───────────────────────────────────────────────
+export const institutionApi = {
+  getApiKey: () => api.get('/institution/api-key'),
+}
+
+// ── Webhooks (api-key authenticated) ─────────────────────────
+export const webhooksApi = {
+  testLead: (apiKey) => axios.post(`${BASE}/webhooks/lead`, {
+    name: 'Test Lead (EduCRM)', phone: '9999999999', email: 'test@educrm.io',
+    source: 'WEBSITE', city: 'Demo City', course_interested: 'MBA',
+  }, { headers: { 'X-API-Key': apiKey }, timeout: 10000 }),
+  testActivity: (apiKey, leadId) => axios.post(`${BASE}/webhooks/activity`, {
+    lead_id: leadId, activity_type: 'page_view',
+  }, { headers: { 'X-API-Key': apiKey }, timeout: 10000 }),
+}
+
 // ── Super Admin ───────────────────────────────────────────────
 const saApi = axios.create({ baseURL: BASE, timeout: 15000 })
 saApi.interceptors.request.use((c) => { const t = localStorage.getItem('sa_token'); if (t) c.headers.Authorization = `Bearer ${t}`; return c })

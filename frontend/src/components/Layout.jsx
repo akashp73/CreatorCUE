@@ -28,6 +28,7 @@ const SETTINGS_NAV = [
   { to: '/settings/whatsapp-templates', label: 'WhatsApp Templates' },
   { to: '/settings/users', label: 'Users' },
   { to: '/settings/branding', label: 'Branding' },
+  { to: '/settings/webhooks', label: 'Webhooks & API' },
 ]
 
 const ROLE_BADGE = {
@@ -188,6 +189,7 @@ export default function Layout({ children }) {
     '/settings/scoring': 'Score Rules', '/settings/email-templates': 'Email Templates',
     '/settings/whatsapp-templates': 'WhatsApp Templates',
     '/settings/users': 'Team Users', '/settings/branding': 'Branding',
+    '/settings/webhooks': 'Webhooks & API',
   }
   const title = PAGE_TITLES[location.pathname] || 'EduCRM'
 

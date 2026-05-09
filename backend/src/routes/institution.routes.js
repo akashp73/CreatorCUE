@@ -8,6 +8,7 @@ const storage = multer.diskStorage({ destination: process.env.UPLOAD_DIR || './u
 const upload = multer({ storage, fileFilter: (_, f, cb) => cb(null, /image/.test(f.mimetype)) });
 r.get('/branding', c.getBranding);
 r.use(authenticate);
+r.get('/api-key', c.getApiKey);
 r.put('/branding', c.updateBranding);
 r.post('/upload-logo', upload.single('logo'), c.uploadLogo);
 r.get('/team', c.getTeam);

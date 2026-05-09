@@ -54,4 +54,10 @@ async function updateTeamMember(req, res) {
   res.json(updated);
 }
 
-module.exports = { getBranding, updateBranding, uploadLogo, getTeam, createTeamMember, updateTeamMember };
+async function getApiKey(req, res) {
+  const inst = await prisma.institution.findUnique({ where: { id: req.user.institution_id }, select: { api_key: true } });
+  if (!inst) return res.status(404).json({ error: 'Institution not found' });
+  res.json({ api_key: inst.api_key });
+}
+
+module.exports = { getBranding, updateBranding, uploadLogo, getTeam, createTeamMember, updateTeamMember, getApiKey };

@@ -19,6 +19,7 @@ import EmailTemplatesPage from './pages/settings/EmailTemplatesPage'
 import WhatsAppTemplatesPage from './pages/settings/WhatsAppTemplatesPage'
 import UsersPage from './pages/settings/UsersPage'
 import BrandingPage from './pages/settings/BrandingPage'
+import WebhooksPage from './pages/settings/WebhooksPage'
 import BillingPage from './pages/BillingPage'
 import PortalApp from './pages/portal/PortalApp'
 import SuperAdminApp from './pages/super/SuperAdminApp'
@@ -62,6 +63,7 @@ export default function App() {
               <Route path="/settings/whatsapp-templates" element={<WhatsAppTemplatesPage />} />
               <Route path="/settings/users" element={<UsersPage />} />
               <Route path="/settings/branding" element={<BrandingPage />} />
+              <Route path="/settings/webhooks" element={<WebhooksPage />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
