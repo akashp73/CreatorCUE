@@ -30,8 +30,12 @@ export default function BrandingPage() {
     setPreview(URL.createObjectURL(file))
     try {
       const r = await brandingApi.uploadLogo(file)
-      setForm(f => ({ ...f, logo_url: r.data.logo_url }))
-      setPreview(r.data.logo_url)
+      const logoUrl = r.data.logo_url
+      const fullUrl = logoUrl?.startsWith('http') ? logoUrl : `http://localhost:5001${logoUrl}`
+      setForm(f => ({ ...f, logo_url: logoUrl }))
+      setPreview(fullUrl)
+      setBranding({ logo_url: logoUrl, name: form.name })
+      qc.invalidateQueries(['branding'])
       toast.success('Logo uploaded!')
     } catch { toast.error('Upload failed') }
     e.target.value = ''
@@ -82,9 +86,9 @@ export default function BrandingPage() {
               }
             </div>
             <div className="flex-1 space-y-2">
-              <label className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-fit btn-outline">
-                <Upload size={14} /> Upload Image
-                <input type="file" accept="image/*" className="hidden" onChange={uploadLogo} />
+              <label className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm w-fit btn-primary">
+                <Upload size={14} /> Upload Logo
+                <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={uploadLogo} />
               </label>
               <input
                 value={form.logo_url}
@@ -92,6 +96,7 @@ export default function BrandingPage() {
                 placeholder="Or paste image URL"
                 className="input"
               />
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Recommended: 200×200px, PNG or SVG, square format</p>
             </div>
           </div>
         </div>

@@ -79,7 +79,13 @@ export default function DrawerMenu({ visible, onClose, navigation, currentScreen
       <Animated.View style={[s.drawer, { transform: [{ translateX: slideAnim }] }]}>
         {/* Profile section */}
         <View style={s.profile}>
-          <View style={s.avatar}>
+          <View style={s.brandRow}>
+            <View style={s.logoBox}>
+              <Ionicons name="school-outline" size={18} color="#ffffff" />
+            </View>
+            <Text style={s.brandName}>{institutionName || 'EduCRM'}</Text>
+          </View>
+          <View style={[s.avatar, { marginTop: 16 }]}>
             <Text style={s.avatarText}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
@@ -155,7 +161,10 @@ export function HamburgerBtn({ onPress }) {
 const s = StyleSheet.create({
   backdrop: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', width: '100%', height: '100%' },
   drawer:   { position: 'absolute', left: 0, top: 0, bottom: 0, width: W * 0.78, maxWidth: 300, backgroundColor: WHITE, elevation: 24, shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.25, shadowRadius: 16 },
-  profile:  { backgroundColor: PURPLE, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  profile:  { backgroundColor: PURPLE, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 24 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 0 },
+  logoBox:  { width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  brandName:{ fontSize: 16, fontWeight: '800', color: WHITE, flex: 1 },
   avatar:   { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   avatarText:{ fontSize: 18, fontWeight: '800', color: WHITE },
   profileName: { fontSize: 16, fontWeight: '800', color: WHITE },

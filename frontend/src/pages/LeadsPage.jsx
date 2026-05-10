@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { leadsApi } from '../services/api'
 import ScoreBadge from '../components/ScoreBadge'
 import Spinner from '../components/Spinner'
+import ImportCSVModal from '../components/ImportCSVModal'
 
 const SOURCES = ['FACEBOOK', 'GOOGLE', 'WEBSITE', 'REFERRAL', 'WALK_IN', 'OTHER']
 const STATUSES = ['NEW', 'CONTACTED', 'APPLIED', 'QUALIFIED', 'ENROLLED', 'LOST']
@@ -78,6 +79,7 @@ export default function LeadsPage() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [smartFilter, setSmartFilter] = useState('all')
   const [filters, setFilters] = useState({
@@ -95,12 +97,7 @@ export default function LeadsPage() {
   const setFilter = useCallback((key, val) => { setFilters(f => ({ ...f, [key]: val })); setPage(1) }, [])
   const selectSmartFilter = (key) => { setSmartFilter(key); setPage(1) }
 
-  const handleImport = async e => {
-    const file = e.target.files[0]; if (!file) return
-    try { const r = await leadsApi.bulkImport(file); toast.success(`Imported ${r.data.created} leads`); qc.invalidateQueries(['leads']) }
-    catch { toast.error('Import failed') }
-    e.target.value = ''
-  }
+  const handleImport = () => setShowImportModal(true)
 
   const handleExport = async () => {
     try {
@@ -114,13 +111,14 @@ export default function LeadsPage() {
   return (
     <div className="space-y-4">
       {showModal && <AddLeadModal onClose={() => setShowModal(false)} onCreated={() => qc.invalidateQueries(['leads'])} />}
+      {showImportModal && <ImportCSVModal onClose={() => setShowImportModal(false)} onImported={() => qc.invalidateQueries(['leads'])} />}
 
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Leads</h1>
         <div className="flex items-center gap-2">
           <button onClick={handleExport} className="btn-outline text-sm"><Download size={14} /> Export</button>
-          <label className="btn-outline text-sm cursor-pointer"><Upload size={14} /> Import <input type="file" accept=".csv" className="hidden" onChange={handleImport} /></label>
+          <button onClick={handleImport} className="btn-outline text-sm"><Upload size={14} /> Import CSV</button>
           <button onClick={() => setShowModal(true)} className="btn-primary text-sm"><Plus size={15} /> Add Lead</button>
         </div>
       </div>

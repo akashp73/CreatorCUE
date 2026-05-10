@@ -145,20 +145,33 @@ export default function LeadProfilePage() {
   const { data: docs = [] } = useQuery({ queryKey: ['lead-docs', id], queryFn: () => leadsApi.getDocs(id).then(r => r.data) })
   const { data: calls = [] } = useQuery({ queryKey: ['lead-calls', id], queryFn: () => callsApi.getLeadCalls(id).then(r => r.data), retry: false })
 
+  // ── Hooks must always run — never place useMemo/useCallback after early returns ──
+  const timeline = useMemo(
+    () => lead ? buildTimeline(lead, notes, comms, payments, calls) : [],
+    [lead, notes, comms, payments, calls]
+  )
+
   const updateStage = async (stage) => { setSavingStage(true); try { await leadsApi.setEnrollmentStage(id, stage); qc.invalidateQueries(['lead', id]); toast.success(`→ ${STAGE_LABELS[stage]}`) } catch { toast.error('Failed') } finally { setSavingStage(false) } }
-  const toggleVerify = async () => { setSavingVerify(true); try { await leadsApi.toggleVerify(id); qc.invalidateQueries(['lead', id]); toast.success(lead.is_verified ? 'Unverified' : 'Verified!') } catch { toast.error('Failed') } finally { setSavingVerify(false) } }
+  const toggleVerify = async () => { setSavingVerify(true); try { await leadsApi.toggleVerify(id); qc.invalidateQueries(['lead', id]); toast.success(lead?.is_verified ? 'Unverified' : 'Verified!') } catch { toast.error('Failed') } finally { setSavingVerify(false) } }
   const addNote = async () => { if (!noteText.trim()) return toast.error('Enter a note'); try { await notesApi.create({ lead_id: id, content: noteText }); setNoteText(''); toast.success('Note added'); qc.invalidateQueries(['lead-notes', id]) } catch (err) { toast.error(err.response?.data?.error || 'Failed') } }
   const addTask = async () => { if (!taskForm.title || !taskForm.due_at) return toast.error('Fill all task fields'); try { await tasksApi.create({ lead_id: id, title: taskForm.title, due_at: taskForm.due_at }); setTaskForm({ title: '', due_at: '' }); toast.success('Task created'); qc.invalidateQueries(['lead-tasks', id]) } catch (err) { toast.error(err.response?.data?.error || 'Failed') } }
   const completeTask = async (tid) => { try { await tasksApi.complete(tid); toast.success('Done!'); qc.invalidateQueries(['lead-tasks', id]) } catch { toast.error('Failed') } }
   const uploadDoc = async (e) => { const file = e.target.files[0]; if (!file) return; try { await leadsApi.uploadDoc(id, file, 'OTHER'); toast.success('Uploaded'); qc.invalidateQueries(['lead-docs', id]) } catch { toast.error('Upload failed') } e.target.value = '' }
 
+  // ── Early returns AFTER all hooks ──────────────────────────────────────────
   if (isLoading) return <Spinner />
-  if (!lead) return <div style={{ textAlign: 'center', padding: 48, color: '#9ca3af' }}>Lead not found</div>
+  if (!lead) return (
+    <div style={{ textAlign: 'center', padding: 80 }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+      <p style={{ fontSize: 16, fontWeight: 600, color: '#374151' }}>Lead not found</p>
+      <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 6 }}>This lead may have been deleted or you don't have access.</p>
+      <button onClick={() => navigate('/leads')} className="btn-primary" style={{ marginTop: 20, fontSize: 13 }}>← Back to Leads</button>
+    </div>
+  )
 
   const score = lead.activity_score
   const scoreLabel = lead.score_label || (score > 80 ? 'HOT' : score > 50 ? 'WARM' : 'COLD')
   const tag = lead.lead_tag || 'COLD'; const tagC = TAG_COLORS[tag] || TAG_COLORS.COLD
-  const timeline = useMemo(() => buildTimeline(lead, notes, comms, payments, calls), [lead, notes, comms, payments, calls])
 
   const TABS = [
     { key: 'details', label: 'Lead Details' }, { key: 'dispose', label: 'Dispose Lead' },

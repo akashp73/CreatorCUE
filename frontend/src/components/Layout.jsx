@@ -86,7 +86,8 @@ function Sidebar({ mobile = false, onClose }) {
 
   useEffect(() => { if (branding) setBranding(branding) }, [branding])
 
-  const logoSrc = buildLogoUrl(globalBranding.logo_url || branding?.logo_url)
+  const customLogoUrl = buildLogoUrl(globalBranding.logo_url || branding?.logo_url)
+  const logoSrc = customLogoUrl || '/educrm-logo.svg'
   const institutionName = globalBranding.name || branding?.name || user?.institution?.name || 'EduCRM'
   const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U'
 
@@ -99,11 +100,8 @@ function Sidebar({ mobile = false, onClose }) {
     <div className="flex flex-col h-full" style={{ background: '#000000', width: 280 }}>
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: '#ffffff' }}>
-          {logoSrc
-            ? <img src={logoSrc} alt="logo" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none' }} />
-            : <GraduationCap size={16} style={{ color: '#000000' }} />
-          }
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: '#1a1a1a' }}>
+          <img src={logoSrc} alt={institutionName} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { e.target.src = '/educrm-logo.svg' }} />
         </div>
         <span className="text-white font-semibold text-base">{institutionName}</span>
         {mobile && <button onClick={onClose} className="ml-auto text-gray-400 hover:text-white"><X size={18} /></button>}
