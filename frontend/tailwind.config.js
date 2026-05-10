@@ -4,19 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy:    '#0f172a',
-        charcoal:'#1e293b',
-        saffron: '#6366f1',
-        accent:  '#6366f1',
+        navy:    '#000000',
+        charcoal:'#111827',
+        saffron: '#7c3aed',
+        accent:  '#7c3aed',
         hot:     '#ef4444',
         warm:    '#f59e0b',
         cold:    '#3b82f6',
         success: '#10b981',
-        bg:      '#0f172a',
-        surface: 'rgba(255,255,255,0.05)',
-      },
-      backdropBlur: {
-        '20px': '20px',
+        bg:      '#f5f5f5',
+        surface: '#ffffff',
+        purple:  '#7c3aed',
       },
     },
   },

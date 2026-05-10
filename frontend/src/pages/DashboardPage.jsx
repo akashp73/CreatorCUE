@@ -1,173 +1,135 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
-import {
-  Users, Flame, Phone, IndianRupee, ArrowUpRight, CheckSquare, Award, AlertTriangle,
-} from 'lucide-react'
-import { dashboardApi, reportsApi } from '../services/api'
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'
+import { Users, Phone, Flame, IndianRupee, Plus, Calendar, ChevronRight, CheckSquare, Award, AlertTriangle } from 'lucide-react'
+import { dashboardApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import StatCard from '../components/StatCard'
 import ScoreBadge from '../components/ScoreBadge'
 import Spinner from '../components/Spinner'
 
-// ── Meritto-style enrollment pipeline tree ─────────────────
-function PipelineTree({ pipeline, onNodeClick }) {
-  const TREE = [
-    { key: 'total', label: 'Total Applications', color: '#6366f1', level: 0 },
-    { key: 'NEW', label: 'New Enquiries', color: '#3b82f6', level: 1, parent: 'total' },
-    { key: 'COUNSELLING', label: 'In Counselling', color: '#f59e0b', level: 1, parent: 'total' },
-    { key: 'APPLIED', label: 'Applied', color: '#8b5cf6', level: 2, parent: 'COUNSELLING' },
-    { key: 'PAYMENT_PENDING', label: 'Payment Pending', color: '#f97316', level: 2, parent: 'APPLIED' },
-    { key: 'ENROLLED', label: 'Enrolled', color: '#10b981', level: 2, parent: 'APPLIED' },
-  ]
+// Pipeline stage config
+const STAGES = [
+  { key: 'NEW',             label: 'Enquiries',      color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+  { key: 'COUNSELLING',     label: 'Counselling',    color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+  { key: 'APPLIED',         label: 'Applied',        color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+  { key: 'PAYMENT_PENDING', label: 'Pmt Pending',    color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+  { key: 'ENROLLED',        label: 'Enrolled',       color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+]
 
-  const total = Object.values(pipeline).reduce((s, v) => s + v, 0)
-  const getCount = (key) => key === 'total' ? total : (pipeline[key] || 0)
-
-  const getPct = (key) => {
-    if (!total) return 0
-    return Math.round((getCount(key) / total) * 100)
-  }
-
+// Page header utility
+function PageHeader({ title, children }) {
   return (
-    <div className="space-y-3">
-      {/* Root node */}
-      <button onClick={() => onNodeClick(null)}
-        className="w-full px-5 py-4 rounded-2xl text-left transition-all hover:opacity-90"
-        style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15))', border: '2px solid rgba(99,102,241,0.4)' }}>
-        <div className="flex items-center justify-between">
-          <span className="font-bold" style={{ color: '#a5b4fc' }}>Total Applications</span>
-          <span className="text-2xl font-black" style={{ color: '#6366f1' }}>{total}</span>
-        </div>
-      </button>
-
-      {/* Level 1 — two columns */}
-      <div className="grid grid-cols-2 gap-3 pl-4">
-        {[
-          { key: 'NEW', label: 'New Enquiries', color: '#3b82f6', accent: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.3)' },
-          { key: 'COUNSELLING', label: 'In Counselling', color: '#f59e0b', accent: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)' },
-        ].map(node => (
-          <button key={node.key} onClick={() => onNodeClick(node.key)}
-            className="px-4 py-3 rounded-xl text-left transition-all hover:opacity-90 relative"
-            style={{ background: node.accent, border: `1px solid ${node.border}` }}>
-            <div className="text-xs font-semibold mb-1" style={{ color: node.color }}>{node.label}</div>
-            <div className="flex items-end justify-between">
-              <span className="text-xl font-black" style={{ color: node.color }}>{getCount(node.key)}</span>
-              <span className="text-xs font-medium" style={{ color: node.color }}>{getPct(node.key)}%</span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Connector line visual */}
-      <div className="flex justify-center">
-        <div className="w-px h-4" style={{ background: 'var(--border)' }} />
-      </div>
-
-      {/* Level 2 — three columns */}
-      <div className="grid grid-cols-3 gap-2 pl-8">
-        {[
-          { key: 'APPLIED', label: 'Applied', color: '#8b5cf6', accent: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.25)' },
-          { key: 'PAYMENT_PENDING', label: 'Pmt Pending', color: '#f97316', accent: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.25)' },
-          { key: 'ENROLLED', label: 'Enrolled', color: '#10b981', accent: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
-        ].map(node => (
-          <button key={node.key} onClick={() => onNodeClick(node.key)}
-            className="px-3 py-3 rounded-xl text-left transition-all hover:opacity-90"
-            style={{ background: node.accent, border: `1px solid ${node.border}` }}>
-            <div className="text-xs font-semibold mb-1" style={{ color: node.color, fontSize: 10 }}>{node.label}</div>
-            <div className="text-xl font-black" style={{ color: node.color }}>{getCount(node.key)}</div>
-            <div className="text-xs" style={{ color: node.color, opacity: 0.7 }}>{getPct(node.key)}%</div>
-          </button>
-        ))}
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{children}</div>
     </div>
   )
 }
 
-function TaskFeedItem({ task }) {
-  const isOverdue = new Date(task.due_at) < new Date()
+function PipelineSection({ pipeline, onStageClick, selectedStage }) {
+  const counts = STAGES.map(s => pipeline[s.key] || 0)
+  const total = counts.reduce((a, b) => a + b, 0) || 1
+
   return (
-    <Link to={`/leads/${task.lead?.id}`} className="flex items-start gap-3 py-2.5 rounded-lg px-2 transition-colors"
-      style={{ ':hover': { background: 'var(--surface-hover)' } }}>
-      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-        style={{ background: isOverdue ? 'rgba(239,68,68,0.15)' : 'rgba(99,102,241,0.15)', color: isOverdue ? '#ef4444' : '#6366f1' }}>
-        {task.lead?.name?.[0]?.toUpperCase() || '?'}
+    <div>
+      {/* Segmented progress bar */}
+      <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2, marginBottom: 16 }}>
+        {STAGES.map((stage, i) => {
+          const pct = (counts[i] / total) * 100
+          return (
+            <div key={stage.key} style={{ flex: Math.max(pct, 2), background: stage.color, borderRadius: 4, transition: 'flex 0.4s' }} />
+          )
+        })}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
-        <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{task.lead?.name}</p>
+
+      {/* Stage boxes */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+        {STAGES.map((stage, i) => {
+          const count = counts[i]
+          const isSelected = selectedStage === stage.key
+          return (
+            <button key={stage.key} onClick={() => onStageClick(stage.key)}
+              style={{
+                padding: '14px 10px', borderRadius: 10, border: `2px solid ${isSelected ? stage.color : 'transparent'}`,
+                background: isSelected ? stage.color : stage.bg,
+                cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center',
+              }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: isSelected ? '#ffffff' : stage.color, margin: 0 }}>{count}</p>
+              <p style={{ fontSize: 11, fontWeight: 500, color: isSelected ? 'rgba(255,255,255,0.85)' : stage.color, marginTop: 4, lineHeight: 1.2 }}>{stage.label}</p>
+            </button>
+          )
+        })}
       </div>
-      <span className="text-xs font-semibold flex-shrink-0 px-2 py-0.5 rounded-full"
-        style={isOverdue
-          ? { color: '#ef4444', background: 'rgba(239,68,68,0.1)' }
-          : { color: '#f59e0b', background: 'rgba(245,158,11,0.1)' }
-        }>
-        {isOverdue ? 'Overdue' : new Date(task.due_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </span>
-    </Link>
+    </div>
   )
 }
 
 export default function DashboardPage() {
   const isManager = useAuthStore(s => s.isManagerOrAdmin())
   const [lbPeriod, setLbPeriod] = useState('today')
-  const [pipelineStage, setPipelineStage] = useState(null)
+  const [selectedStage, setSelectedStage] = useState(null)
+  const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
   const { data: stats, isLoading: sl } = useQuery({ queryKey: ['dash-stats'], queryFn: () => dashboardApi.getStats().then(r => r.data) })
-  const { data: hotLeads = [], isLoading: hl } = useQuery({ queryKey: ['hot-leads'], queryFn: () => dashboardApi.getHotLeads().then(r => r.data) })
+  const { data: hotLeads = [] } = useQuery({ queryKey: ['hot-leads'], queryFn: () => dashboardApi.getHotLeads().then(r => r.data) })
   const { data: todayTasks = [] } = useQuery({ queryKey: ['today-tasks'], queryFn: () => dashboardApi.getTodayTasks().then(r => r.data), retry: false })
   const { data: leaderboard = [] } = useQuery({ queryKey: ['leaderboard', lbPeriod], queryFn: () => dashboardApi.getTeamLeaderboard(lbPeriod).then(r => r.data), enabled: isManager, retry: false })
-  const { data: pipelineLeads = [] } = useQuery({ queryKey: ['pipeline-leads', pipelineStage], queryFn: () => dashboardApi.getPipelineLeads(pipelineStage).then(r => r.data), enabled: pipelineStage !== undefined && pipelineStage !== null, retry: false })
+  const { data: pipelineLeads = [] } = useQuery({ queryKey: ['pipeline-leads', selectedStage], queryFn: () => dashboardApi.getPipelineLeads(selectedStage).then(r => r.data), enabled: !!selectedStage, retry: false })
 
   if (sl) return <Spinner />
 
   const pipeline = stats?.pipeline || {}
   const bySource = stats?.leads_by_source ? Object.entries(stats.leads_by_source).map(([name, value]) => ({ name, value })) : []
+  const byStatus = stats?.leads_by_status ? Object.entries(stats.leads_by_status).map(([name, value]) => ({ name, value })) : []
+  const STATUS_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6b7280']
 
-  const S = (text) => (
-    <h3 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{text}</h3>
-  )
+  const chartTooltipStyle = { background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', color: '#111827' }
 
   return (
-    <div className="space-y-6">
-      {/* Top Row — 4 Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="New Leads Today" value={stats?.new_leads_today} color="#6366f1" glow="blue" to="/leads" />
-        <StatCard icon={Phone} label="Calls Made Today" value={stats?.calls_today} color="#10b981" glow="green" />
-        <StatCard icon={Flame} label="Hot Leads" value={stats?.hot_leads} color="#ef4444" glow="red" to="/hot-leads" />
-        <StatCard icon={IndianRupee} label="Enrolled This Month" value={stats?.enrolled_this_month} color="#f59e0b" glow="gold" />
+    <div>
+      <PageHeader title="Dashboard">
+        <button className="btn-outline" style={{ fontSize: 13 }}>
+          <Calendar size={14} /> {today}
+        </button>
+        <Link to="/leads" className="btn-primary" style={{ fontSize: 13, textDecoration: 'none' }}>
+          <Plus size={14} /> Add Lead
+        </Link>
+      </PageHeader>
+
+      {/* Row 1 — 4 stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
+        <StatCard icon={Users}       label="New leads today"     value={stats?.new_leads_today}      glow="purple" to="/leads" />
+        <StatCard icon={Phone}       label="Calls made today"    value={stats?.calls_today}           glow="green" />
+        <StatCard icon={Flame}       label="Hot leads"           value={stats?.hot_leads}             glow="orange" to="/hot-leads" />
+        <StatCard icon={IndianRupee} label="Enrolled this month" value={stats?.enrolled_this_month}  glow="green" />
       </div>
 
-      {/* Middle Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left: Meritto Pipeline Tree */}
-        <div className="lg:col-span-2 card">
-          <div className="flex items-center justify-between mb-5">
-            {S('Enrollment Pipeline')}
+      {/* Row 2 — Pipeline + Tasks */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 20 }}>
+        {/* Pipeline */}
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Enrollment Pipeline</h3>
+            {selectedStage && (
+              <button onClick={() => setSelectedStage(null)} style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
+            )}
           </div>
-          <PipelineTree pipeline={pipeline} onNodeClick={s => setPipelineStage(prev => prev === s ? null : s)} />
+          <PipelineSection pipeline={pipeline} onStageClick={s => setSelectedStage(prev => prev === s ? null : s)} selectedStage={selectedStage} />
 
           {/* Drill-down */}
-          {pipelineStage !== null && (
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  {pipelineStage ? `${pipelineStage} — ` : 'All leads — '}{pipelineLeads.length} results
-                </p>
-                <button onClick={() => setPipelineStage(null)} className="text-xs" style={{ color: '#6366f1' }}>Clear</button>
-              </div>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
+          {selectedStage && pipelineLeads.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{pipelineLeads.length} leads in this stage</p>
+              <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {pipelineLeads.map(lead => (
-                  <Link key={lead.id} to={`/leads/${lead.id}`}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors"
-                    style={{ ':hover': { background: 'var(--surface-hover)' } }}>
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>
+                  <Link key={lead.id} to={`/leads/${lead.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, textDecoration: 'none', background: 'var(--bg)', transition: 'background 0.15s' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#6b7280', flexShrink: 0 }}>
                       {lead.name?.[0]?.toUpperCase()}
                     </div>
-                    <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{lead.name}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{lead.course_interested || lead.source}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)', flex: 1 }}>{lead.name}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.course_interested || lead.source}</span>
                   </Link>
                 ))}
               </div>
@@ -175,138 +137,126 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Right: Today Tasks + Team Status */}
-        <div className="space-y-4">
-          <div className="card">
-            {S("Today's Tasks")}
-            {todayTasks.length === 0 ? (
-              <div className="text-center py-6">
-                <CheckSquare size={28} style={{ color: 'var(--text-muted)', margin: '0 auto 8px' }} />
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>All clear!</p>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {todayTasks.map(task => <TaskFeedItem key={task.id} task={task} />)}
+        {/* Today's Tasks */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>Today's tasks</h3>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {todayTasks.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <CheckSquare size={28} style={{ color: '#d1d5db', margin: '0 auto 8px' }} />
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>All clear for today</p>
               </div>
             )}
-            <Link to="/tasks" className="flex items-center justify-center gap-1 mt-3 text-xs font-semibold py-2 rounded-lg"
-              style={{ color: '#6366f1', background: 'rgba(99,102,241,0.07)' }}>
-              View all tasks <ArrowUpRight size={11} />
-            </Link>
+            {todayTasks.map(task => {
+              const isOverdue = new Date(task.due_at) < new Date()
+              return (
+                <Link key={task.id} to={`/leads/${task.lead?.id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', textDecoration: 'none', transition: 'background 0.15s' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: isOverdue ? '#ef4444' : '#f59e0b', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>{task.lead?.name}</p>
+                  </div>
+                  {isOverdue && <span style={{ fontSize: 10, fontWeight: 600, color: '#dc2626', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: 20 }}>Overdue</span>}
+                </Link>
+              )
+            })}
           </div>
+          <Link to="/tasks" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 12, fontSize: 13, color: '#6b7280', textDecoration: 'none', fontWeight: 500 }}>
+            View all tasks <ChevronRight size={13} />
+          </Link>
         </div>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Leads by Source Chart */}
+      {/* Row 3 — Charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 20 }}>
+        {/* Leads by Source */}
         <div className="card">
-          {S('Leads by Source')}
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={bySource} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12, color: 'var(--text-primary)' }} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
-              <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px' }}>Leads by source</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={bySource} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: '#f9fafb' }} />
+              <Bar dataKey="value" fill="#7c3aed" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Hot Leads */}
+        {/* Leads by Status */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            {S('Top Hot Leads')}
-            <Link to="/hot-leads" className="text-xs font-semibold flex items-center gap-1 -mt-4" style={{ color: '#6366f1' }}>
-              All <ArrowUpRight size={10} />
-            </Link>
-          </div>
-          {hl ? <Spinner size={5} /> : (
-            <div className="space-y-2">
-              {hotLeads.slice(0, 5).map(lead => (
-                <Link key={lead.id} to={`/leads/${lead.id}`}
-                  className="flex items-center gap-2 py-2 px-2 rounded-lg transition-colors hover:bg-opacity-5"
-                  style={{ ':hover': { background: 'var(--surface-hover)' } }}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
-                    {lead.name?.[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{lead.name}</p>
-                    <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{lead.course_interested || '—'}</p>
-                  </div>
-                  <ScoreBadge score={lead.activity_score} label={lead.score_label} />
-                </Link>
-              ))}
-              {hotLeads.length === 0 && <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>No hot leads</p>}
-            </div>
-          )}
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px' }}>Leads by status</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={byStatus} cx="50%" cy="50%" innerRadius={52} outerRadius={78} dataKey="value" paddingAngle={2}>
+                {byStatus.map((_, i) => <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />)}
+              </Pie>
+              <Tooltip contentStyle={chartTooltipStyle} />
+              <Legend iconSize={8} wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
       {/* Re-engagement alert */}
       {stats?.reengagement_leads > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
-          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-          <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold" style={{ color: '#f59e0b' }}>
-              {stats.reengagement_leads} lead{stats.reengagement_leads > 1 ? 's' : ''} need re-engagement
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>No activity in 7+ days.</p>
-          </div>
-          <Link to="/tasks" className="text-xs font-bold flex-shrink-0 underline" style={{ color: '#f59e0b' }}>View Tasks</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: 20 }}>
+          <AlertTriangle size={16} style={{ color: '#d97706', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: '#92400e', flex: 1, margin: 0 }}>
+            <strong>{stats.reengagement_leads} leads</strong> haven't been contacted in 7+ days.
+          </p>
+          <Link to="/tasks" style={{ fontSize: 13, color: '#d97706', fontWeight: 600, textDecoration: 'none' }}>View Tasks →</Link>
         </div>
       )}
 
       {/* Team Leaderboard */}
       {isManager && (
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              <Award size={15} style={{ color: '#f59e0b' }} /> Team Leaderboard
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Award size={16} style={{ color: '#f59e0b' }} /> Team Leaderboard
             </h3>
-            <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--surface)' }}>
+            <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
               {['today', 'week', 'month'].map(p => (
                 <button key={p} onClick={() => setLbPeriod(p)}
-                  className="px-3 py-1 rounded-md text-xs font-semibold capitalize transition-all"
-                  style={lbPeriod === p ? { background: '#6366f1', color: 'white' } : { color: 'var(--text-secondary)' }}>
+                  style={{
+                    padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer', textTransform: 'capitalize',
+                    background: lbPeriod === p ? '#000000' : 'transparent',
+                    color: lbPeriod === p ? '#ffffff' : 'var(--text-secondary)',
+                    transition: 'all 0.15s',
+                  }}>
                   {p}
                 </button>
               ))}
             </div>
           </div>
-
-          {leaderboard.length === 0
-            ? <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>No data for this period</p>
-            : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {leaderboard.slice(0, 6).map((user, i) => (
-                  <div key={user.id} className="rounded-xl p-4 transition-all"
-                    style={{
-                      background: i === 0 ? 'rgba(99,102,241,0.08)' : 'var(--surface)',
-                      border: `1px solid ${i === 0 ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
-                    }}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xl">{['🥇', '🥈', '🥉'][i] || `#${i + 1}`}</span>
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-hover)', color: 'var(--text-secondary)' }}>{user.role}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[{ v: user.conversions, l: 'Converted', c: '#10b981' }, { v: user.call_count, l: 'Calls', c: '#6366f1' }, { v: `${user.talk_time}m`, l: 'Talk', c: '#f59e0b' }].map(s => (
-                        <div key={s.l} className="text-center">
-                          <p className="text-lg font-black" style={{ color: s.c }}>{s.v}</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.l}</p>
-                        </div>
-                      ))}
-                    </div>
+          {leaderboard.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No data for this period</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+              {leaderboard.slice(0, 6).map((user, i) => (
+                <div key={user.id} style={{
+                  padding: '14px 16px', borderRadius: 10,
+                  background: i === 0 ? '#000000' : 'var(--bg)',
+                  border: `1px solid ${i === 0 ? '#000000' : 'var(--border)'}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 16 }}>{['🥇', '🥈', '🥉'][i] || `#${i + 1}`}</span>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: i === 0 ? '#ffffff' : 'var(--text-primary)', margin: 0 }}>{user.name}</p>
                   </div>
-                ))}
-              </div>
-            )
-          }
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', textAlign: 'center', gap: 4 }}>
+                    {[{ v: user.conversions, l: 'Conv', c: '#10b981' }, { v: user.call_count, l: 'Calls', c: i === 0 ? '#a78bfa' : '#7c3aed' }, { v: `${user.talk_time}m`, l: 'Talk', c: '#f59e0b' }].map(s => (
+                      <div key={s.l}>
+                        <p style={{ fontSize: 16, fontWeight: 700, color: s.c, margin: 0 }}>{s.v}</p>
+                        <p style={{ fontSize: 10, color: i === 0 ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)', margin: 0 }}>{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

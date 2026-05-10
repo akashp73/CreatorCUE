@@ -9,14 +9,15 @@ const RULE_TYPES = ['COURSE', 'CITY']
 
 function ModeToggle({ value, onChange }) {
   return (
-    <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+    <div className="flex items-center gap-1 rounded-xl p-1 w-fit" style={{ background: '#f3f4f6' }}>
       {['MANUAL', 'AUTOMATIC'].map(m => (
         <button
           key={m}
           onClick={() => onChange(m)}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-            value === m ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-          }`}
+          className="px-5 py-2 rounded-lg text-sm font-semibold transition-all"
+          style={value === m
+            ? { background: '#ffffff', color: '#111827', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }
+            : { color: 'var(--text-secondary)' }}
         >
           {m === 'MANUAL' ? '✋ Manual' : '⚡ Automatic'}
         </button>
@@ -102,22 +103,22 @@ export default function AssignmentPage() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-          <UserCheck size={20} className="text-indigo-600" />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(79,70,229,0.1)' }}>
+          <UserCheck size={20} style={{ color: '#4f46e5' }} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Lead Assignment</h1>
-          <p className="text-sm text-gray-500">Control how incoming leads are assigned to counsellors</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Lead Assignment</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Control how incoming leads are assigned to counsellors</p>
         </div>
       </div>
 
       {/* Mode + counsellors */}
       <div className="card space-y-5">
         <div>
-          <p className="text-sm font-semibold text-gray-800 mb-3">Assignment Mode</p>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>Assignment Mode</h3>
           <ModeToggle value={displayMode} onChange={v => setMode(v)} />
           {displayMode === 'MANUAL' && (
-            <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
+            <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
               <Info size={12} /> Leads from webhooks will be unassigned. Counsellors are assigned manually from the lead profile.
             </p>
           )}
@@ -125,41 +126,42 @@ export default function AssignmentPage() {
 
         {displayMode === 'AUTOMATIC' && (
           <>
-            <div className="border-t border-gray-100 pt-5">
+            <div className="pt-5" style={{ borderTop: '1px solid #f3f4f6' }}>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-gray-800">Counsellor Ratios</p>
-                <button onClick={setEqualDistribution} className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Counsellor Ratios</h3>
+                <button onClick={setEqualDistribution} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#4f46e5' }}>
                   <RefreshCw size={12} /> Equal distribution
                 </button>
               </div>
 
               {displayCounsellors.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">No active counsellors found</p>
+                <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>No active counsellors found</p>
               ) : (
                 <div className="space-y-3">
                   {displayCounsellors.map(c => {
                     const pct = totalRatio > 0 ? Math.round((Number(c.ratio) / totalRatio) * 100) : 0
                     return (
                       <div key={c.user_id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: '#4f46e5' }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: '#111827' }}>
                           {c.name?.[0]?.toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <div className="h-1.5 bg-gray-100 rounded-full flex-1 overflow-hidden">
-                              <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-1.5 rounded-full flex-1 overflow-hidden" style={{ background: '#f3f4f6' }}>
+                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: '#4f46e5' }} />
                             </div>
-                            <span className="text-xs text-gray-500 w-8 text-right tabular-nums">{pct}%</span>
+                            <span className="text-xs w-8 text-right tabular-nums" style={{ color: 'var(--text-muted)' }}>{pct}%</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
-                          <span className="text-xs text-gray-500">Ratio</span>
+                        <div className="flex items-center gap-1 rounded-lg px-2 py-1.5" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Ratio</span>
                           <input
                             type="number" min="0" max="99"
                             value={c.ratio}
                             onChange={e => updateRatio(c.user_id, e.target.value)}
                             className="w-10 text-center text-sm font-semibold bg-transparent focus:outline-none"
+                            style={{ color: 'var(--text-primary)' }}
                           />
                         </div>
                       </div>
@@ -171,9 +173,9 @@ export default function AssignmentPage() {
 
             {/* Preview */}
             {nextAssignee && (
-              <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3">
-                <ArrowRight size={14} className="text-indigo-500 flex-shrink-0" />
-                <p className="text-sm text-indigo-700">
+              <div className="flex items-center gap-2 rounded-xl px-4 py-3" style={{ background: 'rgba(79,70,229,0.05)', border: '1px solid rgba(79,70,229,0.2)' }}>
+                <ArrowRight size={14} style={{ color: '#4f46e5', flexShrink: 0 }} />
+                <p className="text-sm" style={{ color: '#4f46e5' }}>
                   Next lead goes to: <span className="font-bold">{nextAssignee.name}</span>
                 </p>
               </div>
@@ -182,7 +184,7 @@ export default function AssignmentPage() {
         )}
 
         <div className="flex justify-end pt-1">
-          <button onClick={saveConfig} disabled={saving} className="btn-gold text-sm">
+          <button onClick={saveConfig} disabled={saving} className="btn-primary text-sm">
             {saving ? 'Saving…' : 'Save Configuration'}
           </button>
         </div>
@@ -192,8 +194,8 @@ export default function AssignmentPage() {
       <div className="card space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-800">Assignment Rules</p>
-            <p className="text-xs text-gray-500 mt-0.5">Rules take priority over round-robin when mode is Automatic</p>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Assignment Rules</h3>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Rules take priority over round-robin when mode is Automatic</p>
           </div>
           <button onClick={() => setAddingRule(v => !v)} className="btn-outline text-xs py-1.5 px-3">
             <Plus size={13} /> Add Rule
@@ -202,52 +204,57 @@ export default function AssignmentPage() {
 
         {/* Add rule form */}
         {addingRule && (
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+          <div className="rounded-xl p-4 space-y-3" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Type</label>
-                <select value={newRule.rule_type} onChange={e => setNewRule({ ...newRule, rule_type: e.target.value })} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none bg-white">
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>Type</label>
+                <select value={newRule.rule_type} onChange={e => setNewRule({ ...newRule, rule_type: e.target.value })} className="input w-full">
                   {RULE_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                   {newRule.rule_type === 'COURSE' ? 'Course contains' : 'City equals'}
                 </label>
-                <input value={newRule.match_value} onChange={e => setNewRule({ ...newRule, match_value: e.target.value })} placeholder={newRule.rule_type === 'COURSE' ? 'MBA, B.Tech…' : 'Mumbai'} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none" />
+                <input value={newRule.match_value} onChange={e => setNewRule({ ...newRule, match_value: e.target.value })} placeholder={newRule.rule_type === 'COURSE' ? 'MBA, B.Tech…' : 'Mumbai'} className="input w-full" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Assign to</label>
-                <select value={newRule.assigned_to} onChange={e => setNewRule({ ...newRule, assigned_to: e.target.value })} className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none bg-white">
+                <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>Assign to</label>
+                <select value={newRule.assigned_to} onChange={e => setNewRule({ ...newRule, assigned_to: e.target.value })} className="input w-full">
                   <option value="">Select…</option>
                   {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setAddingRule(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
-              <button onClick={createRule} className="btn-gold text-xs py-1.5 px-4">Add Rule</button>
+              <button onClick={() => setAddingRule(false)} className="text-sm px-3 py-1.5" style={{ color: 'var(--text-secondary)' }}>Cancel</button>
+              <button onClick={createRule} className="btn-primary text-xs py-1.5 px-4">Add Rule</button>
             </div>
           </div>
         )}
 
         {/* Rules list */}
         {rl ? <Spinner size={5} /> : rules.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">No rules yet — round-robin handles all leads</p>
+          <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>No rules yet — round-robin handles all leads</p>
         ) : (
           <div className="space-y-2">
             {rules.map(rule => (
-              <div key={rule.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50">
-                <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${rule.rule_type === 'COURSE' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+              <div key={rule.id} className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ border: '1px solid #f3f4f6', background: '#fafafa' }}>
+                <div className={`text-xs font-bold px-2 py-0.5 rounded-full`}
+                  style={rule.rule_type === 'COURSE'
+                    ? { background: 'rgba(37,99,235,0.1)', color: '#1d4ed8' }
+                    : { background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>
                   {rule.rule_type}
                 </div>
-                <p className="text-sm text-gray-700 flex-1">
+                <p className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>
                   {rule.rule_type === 'COURSE' ? 'Course contains' : 'City is'}{' '}
                   <span className="font-semibold">"{rule.match_value}"</span>
                   {' → '}
-                  <span className="font-semibold text-indigo-700">{rule.assignee?.name}</span>
+                  <span className="font-semibold" style={{ color: '#4f46e5' }}>{rule.assignee?.name}</span>
                 </p>
-                <button onClick={() => deleteRule(rule.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                <button onClick={() => deleteRule(rule.id)} className="p-1 transition-colors" style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
                   <Trash2 size={14} />
                 </button>
               </div>

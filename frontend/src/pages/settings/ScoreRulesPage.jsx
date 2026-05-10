@@ -13,21 +13,25 @@ function RuleRow({ rule, onUpdated }) {
     catch { toast.error('Failed') }
   }
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50">
-      <td className="px-5 py-4 font-mono text-sm text-purple-700 bg-purple-50 rounded-lg mr-2">{rule.activity_type}</td>
+    <tr style={{ borderBottom: '1px solid #f3f4f6' }}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+      <td className="px-5 py-4">
+        <span className="font-mono text-sm px-2 py-0.5 rounded" style={{ background: '#f3f4f6', color: 'var(--text-primary)' }}>{rule.activity_type}</span>
+      </td>
       <td className="px-5 py-4">{editing ? (
         <div className="flex items-center gap-2">
-          <input type="number" value={pts} onChange={e=>setPts(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none" autoFocus/>
+          <input type="number" value={pts} onChange={e=>setPts(e.target.value)} className="w-20 px-2 py-1 rounded-lg text-sm text-center input" autoFocus/>
           <button onClick={save} className="p-1.5 rounded-lg text-white bg-green-500"><Check size={13}/></button>
-          <button onClick={()=>{setPts(rule.points);setEditing(false)}} className="p-1.5 rounded-lg bg-gray-200 text-gray-600"><X size={13}/></button>
+          <button onClick={()=>{setPts(rule.points);setEditing(false)}} className="p-1.5 rounded-lg" style={{ background: '#f3f4f6', color: 'var(--text-secondary)' }}><X size={13}/></button>
         </div>
       ) : (
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-bold" style={{backgroundColor:'#4f46e520',color:'#4f46e5'}}>+{rule.points} pts</span>
-          <button onClick={()=>setEditing(true)} className="text-gray-400 hover:text-gray-600"><Edit3 size={14}/></button>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(79,70,229,0.1)', color: '#4f46e5' }}>+{rule.points} pts</span>
+          <button onClick={()=>setEditing(true)} style={{ color: 'var(--text-muted)' }} className="hover:text-gray-600"><Edit3 size={14}/></button>
         </div>
       )}</td>
-      <td className="px-5 py-4 text-xs text-gray-400">{new Date(rule.created_at).toLocaleDateString()}</td>
+      <td className="px-5 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(rule.created_at).toLocaleDateString()}</td>
     </tr>
   )
 }
@@ -44,18 +48,18 @@ export default function ScoreRulesPage() {
   if (isLoading) return <Spinner/>
   return (
     <div className="space-y-5 max-w-3xl">
-      <h1 className="text-xl font-bold text-gray-800">Score Rules</h1>
+      <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Score Rules</h1>
       <form onSubmit={add} className="card p-4 flex gap-3">
-        <input value={newRule.activity_type} onChange={e=>setNewRule({...newRule,activity_type:e.target.value})} placeholder="activity_type (e.g. video_watched)" className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
-        <input type="number" value={newRule.points} onChange={e=>setNewRule({...newRule,points:e.target.value})} placeholder="Points" className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"/>
-        <button type="submit" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{backgroundColor:'#4f46e5'}}><Plus size={14}/> Add</button>
+        <input value={newRule.activity_type} onChange={e=>setNewRule({...newRule,activity_type:e.target.value})} placeholder="activity_type (e.g. video_watched)" className="input flex-1"/>
+        <input type="number" value={newRule.points} onChange={e=>setNewRule({...newRule,points:e.target.value})} placeholder="Points" className="input w-24"/>
+        <button type="submit" className="btn-primary flex items-center gap-1.5"><Plus size={14}/> Add</button>
       </form>
       <div className="card p-0 overflow-hidden">
         <table className="w-full text-sm">
-          <thead><tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-            <th className="text-left px-5 py-3 font-medium">Activity Type</th>
-            <th className="text-left px-5 py-3 font-medium">Points</th>
-            <th className="text-left px-5 py-3 font-medium">Created</th>
+          <thead><tr style={{ background: '#fafafa', borderBottom: '1px solid #f3f4f6' }}>
+            <th className="text-left px-5 py-3 font-medium text-xs" style={{ color: 'var(--text-secondary)' }}>Activity Type</th>
+            <th className="text-left px-5 py-3 font-medium text-xs" style={{ color: 'var(--text-secondary)' }}>Points</th>
+            <th className="text-left px-5 py-3 font-medium text-xs" style={{ color: 'var(--text-secondary)' }}>Created</th>
           </tr></thead>
           <tbody>{rules.map(r => <RuleRow key={r.id} rule={r} onUpdated={()=>qc.invalidateQueries(['score-rules'])}/>)}</tbody>
         </table>

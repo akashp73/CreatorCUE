@@ -12,7 +12,11 @@ const STATUSES = ['NEW', 'CONTACTED', 'APPLIED', 'QUALIFIED', 'ENROLLED', 'LOST'
 const STAGES = ['NEW', 'COUNSELLING', 'APPLIED', 'PAYMENT_PENDING', 'ENROLLED']
 const STAGE_COLORS = { NEW: '#6366f1', COUNSELLING: '#f59e0b', APPLIED: '#3b82f6', PAYMENT_PENDING: '#f97316', ENROLLED: '#10b981' }
 const STAGE_LABELS = { NEW: 'New', COUNSELLING: 'Counselling', APPLIED: 'Applied', PAYMENT_PENDING: 'Pmt Pending', ENROLLED: 'Enrolled' }
-const TAG_COLORS = { HOT: { color: '#ef4444', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)' }, WARM: { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)' }, COLD: { color: '#6366f1', bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.3)' } }
+const TAG_COLORS = {
+  HOT: { color: '#dc2626', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)' },
+  WARM: { color: '#d97706', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)' },
+  COLD: { color: '#2563eb', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)' }
+}
 
 // Smart filter presets
 const SMART_FILTERS = [
@@ -43,8 +47,8 @@ function AddLeadModal({ onClose, onCreated }) {
     finally { setLoading(false) }
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full max-w-lg rounded-2xl p-6" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-lg rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>Add New Lead</h2>
           <button onClick={onClose} style={{ color: 'var(--text-secondary)' }}><X size={18} /></button>
@@ -113,14 +117,11 @@ export default function LeadsPage() {
 
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Leads</h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{pagination.total || leads.length} total leads</p>
-        </div>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Leads</h1>
         <div className="flex items-center gap-2">
           <button onClick={handleExport} className="btn-outline text-sm"><Download size={14} /> Export</button>
           <label className="btn-outline text-sm cursor-pointer"><Upload size={14} /> Import <input type="file" accept=".csv" className="hidden" onChange={handleImport} /></label>
-          <button onClick={() => setShowModal(true)} className="btn-gold text-sm"><Plus size={15} /> Add Lead</button>
+          <button onClick={() => setShowModal(true)} className="btn-primary text-sm"><Plus size={15} /> Add Lead</button>
         </div>
       </div>
 
@@ -130,7 +131,7 @@ export default function LeadsPage() {
           <button key={f.key} onClick={() => selectSmartFilter(f.key)}
             className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={smartFilter === f.key
-              ? { background: '#6366f1', color: 'white', boxShadow: '0 0 12px rgba(99,102,241,0.3)' }
+              ? { background: '#111827', color: '#ffffff' }
               : { background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
             }>
             {f.label}
@@ -191,19 +192,23 @@ export default function LeadsPage() {
                 const tagC = TAG_COLORS[lead.lead_tag] || TAG_COLORS.COLD
                 return (
                   <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                    <td><span className="font-semibold hover:text-indigo-400 transition-colors" style={{ color: 'var(--text-primary)' }}>{lead.name}</span></td>
+                    <td><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{lead.name}</span></td>
                     <td><a href={`tel:${lead.phone}`} onClick={e => e.stopPropagation()} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{lead.phone}</a></td>
                     <td style={{ color: 'var(--text-secondary)' }}>{lead.course_interested || '—'}</td>
-                    <td><span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--surface-hover)', color: 'var(--text-secondary)' }}>{lead.source}</span></td>
+                    <td><span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--surface-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>{lead.source}</span></td>
                     <td><ScoreBadge score={lead.activity_score} label={lead.score_label} /></td>
                     <td>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: tagC.bg, color: tagC.color, border: `1px solid ${tagC.border}` }}>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: tagC.bg, color: tagC.color, border: `1px solid ${tagC.border}` }}>
                         {lead.lead_tag || 'COLD'}
                       </span>
                     </td>
-                    <td><span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${stageColor}15`, color: stageColor, border: `1px solid ${stageColor}30` }}>{STAGE_LABELS[lead.enrollment_stage] || 'New'}</span></td>
+                    <td>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${stageColor}18`, color: stageColor, border: `1px solid ${stageColor}30` }}>
+                        {STAGE_LABELS[lead.enrollment_stage] || 'New'}
+                      </span>
+                    </td>
                     <td>{lead.is_verified ? <ShieldCheck size={14} style={{ color: '#10b981' }} /> : <Shield size={14} style={{ color: 'var(--text-muted)' }} />}</td>
-                    <td><span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--surface-hover)', color: 'var(--text-secondary)' }}>{lead.status}</span></td>
+                    <td><span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--surface-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>{lead.status}</span></td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{lead.assignee?.name || 'Unassigned'}</td>
                     <td><span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}><Clock size={11} />{timeAgo(lead.last_activity_at)}</span></td>
                     <td style={{ color: lead.follow_up_date ? '#f59e0b' : 'var(--text-muted)', fontSize: 12 }}>{lead.follow_up_date ? new Date(lead.follow_up_date).toLocaleDateString() : '—'}</td>

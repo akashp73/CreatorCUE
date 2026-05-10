@@ -11,15 +11,15 @@ function TaskItem({ task, onComplete }) {
   return (
     <div className="flex items-start gap-3 p-4 rounded-xl transition-all"
       style={{
-        background: isOverdue ? 'rgba(239,68,68,0.06)' : 'rgba(255,255,255,0.05)',
-        border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.08)'}`,
+        background: isOverdue ? 'rgba(239,68,68,0.05)' : 'var(--surface)',
+        border: `1px solid ${isOverdue ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
       }}>
       <div className="flex-1 min-w-0">
-        <Link to={`/leads/${task.lead?.id}`} className="text-xs font-semibold hover:underline" style={{ color: '#6366f1' }}>{task.lead?.name}</Link>
-        <p className="text-sm font-medium mt-0.5" style={{ color: '#f1f5f9' }}>{task.title}</p>
+        <Link to={`/leads/${task.lead?.id}`} className="text-xs font-semibold hover:underline" style={{ color: '#7c3aed' }}>{task.lead?.name}</Link>
+        <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
         <div className="flex items-center gap-1 mt-1">
-          <Calendar size={11} style={{ color: '#475569' }} />
-          <p className="text-xs" style={{ color: '#94a3b8' }}>{new Date(task.due_at).toLocaleString()}</p>
+          <Calendar size={11} style={{ color: 'var(--text-muted)' }} />
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{new Date(task.due_at).toLocaleString()}</p>
           {isOverdue && (
             <span className="text-xs font-semibold flex items-center gap-0.5 ml-2" style={{ color: '#ef4444' }}>
               <AlertTriangle size={11} /> Overdue
@@ -28,8 +28,8 @@ function TaskItem({ task, onComplete }) {
         </div>
       </div>
       <button onClick={() => onComplete(task.id)}
-        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition-opacity"
-        style={{ backgroundColor: '#6366f1' }}>
+        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+        style={{ background: '#111827', color: '#ffffff' }}>
         <Check size={12} /> Done
       </button>
     </div>
@@ -42,8 +42,8 @@ function Section({ title, icon: Icon, tasks, color, onComplete }) {
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Icon size={16} style={{ color }} />
-        <h2 className="text-sm font-semibold" style={{ color: '#f1f5f9' }}>{title}</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: color + '20', color }}>{tasks.length}</span>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: color + '18', color }}>{tasks.length}</span>
       </div>
       <div className="space-y-2">{tasks.map(t => <TaskItem key={t.id} task={t} onComplete={onComplete} />)}</div>
     </div>
@@ -67,17 +67,17 @@ export default function TasksPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
-          <Check size={20} style={{ color: '#6366f1' }} />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)' }}>
+          <Check size={20} style={{ color: '#7c3aed' }} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">My Tasks</h1>
-          <p className="text-sm" style={{ color: '#94a3b8' }}>{total} pending tasks</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>My Tasks</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{total} pending tasks</p>
         </div>
       </div>
 
       {total === 0 && (
-        <div className="text-center py-20" style={{ color: '#475569' }}>
+        <div className="text-center py-20" style={{ color: 'var(--text-muted)' }}>
           <Check size={48} className="mx-auto mb-3 opacity-20" />
           <p className="font-medium">All caught up! No pending tasks.</p>
         </div>
@@ -85,7 +85,7 @@ export default function TasksPage() {
 
       <Section title="Overdue" icon={AlertTriangle} tasks={overdue} color="#ef4444" onComplete={complete} />
       <Section title="Due Today" icon={Clock} tasks={due_today} color="#f59e0b" onComplete={complete} />
-      <Section title="Upcoming" icon={Calendar} tasks={upcoming} color="#6366f1" onComplete={complete} />
+      <Section title="Upcoming" icon={Calendar} tasks={upcoming} color="#7c3aed" onComplete={complete} />
     </div>
   )
 }

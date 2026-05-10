@@ -85,10 +85,13 @@ function CopyButton({ text, size = 14 }) {
     <button
       onClick={copy}
       title="Copy"
-      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all"
+      style={{ color: 'var(--text-secondary)' }}
+      onMouseEnter={e => e.currentTarget.style.background = '#f3f4f6'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
       {copied
-        ? <CheckCircle size={size} className="text-emerald-500" />
+        ? <CheckCircle size={size} style={{ color: '#059669' }} />
         : <Copy size={size} />
       }
       <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -137,22 +140,22 @@ function WebhookCard({ wh, apiKey }) {
   return (
     <div className="card p-0 overflow-hidden">
       {/* Card header */}
-      <div className="flex items-start justify-between gap-4 p-5 border-b border-gray-100">
+      <div className="flex items-start justify-between gap-4 p-5" style={{ borderBottom: '1px solid #f3f4f6' }}>
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Link size={15} className="text-indigo-600" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(79,70,229,0.1)' }}>
+            <Link size={15} style={{ color: '#4f46e5' }} />
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">{wh.title}</p>
-            <p className="text-xs text-gray-500 mt-0.5 max-w-sm">{wh.description}</p>
+            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{wh.title}</p>
+            <p className="text-xs mt-0.5 max-w-sm" style={{ color: 'var(--text-secondary)' }}>{wh.description}</p>
           </div>
         </div>
         {wh.canTest && (
           <button
             onClick={handleTest}
             disabled={testing || !apiKey}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 flex-shrink-0"
-            style={{ backgroundColor: '#4f46e5' }}
+            className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs flex-shrink-0"
+            style={{ opacity: (testing || !apiKey) ? 0.5 : 1 }}
           >
             {testing
               ? <Loader2 size={12} className="animate-spin" />
@@ -164,19 +167,19 @@ function WebhookCard({ wh, apiKey }) {
       </div>
 
       {/* URL row */}
-      <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-        <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-mono flex-shrink-0">
+      <div className="px-5 py-3 flex items-center gap-2" style={{ background: '#fafafa', borderBottom: '1px solid #f3f4f6' }}>
+        <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono flex-shrink-0" style={{ background: 'rgba(79,70,229,0.1)', color: '#4f46e5' }}>
           {wh.method}
         </span>
-        <code className="text-xs text-gray-700 font-mono flex-1 truncate">{url}</code>
+        <code className="text-xs font-mono flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{url}</code>
         <CopyButton text={url} />
       </div>
 
       {/* Custom source row (Lead Capture only) */}
       {wh.canCustomSource && (
-        <div className="px-5 py-4 border-b border-gray-100 bg-white space-y-3">
+        <div className="px-5 py-4 space-y-3" style={{ borderBottom: '1px solid #f3f4f6', background: '#ffffff' }}>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-gray-600 whitespace-nowrap flex-shrink-0">
+            <label className="text-xs font-semibold whitespace-nowrap flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
               Custom Source
             </label>
             <input
@@ -188,22 +191,22 @@ function WebhookCard({ wh, apiKey }) {
               }}
               onKeyDown={e => { if (e.key === 'Enter' && customSource.trim()) setShowGenerated(true) }}
               placeholder="APP, TEACHX, YOUTUBE"
-              className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-colors"
+              className="input flex-1 text-xs font-mono"
               maxLength={40}
             />
             <button
               onClick={() => { if (customSource.trim()) setShowGenerated(true) }}
               disabled={!customSource.trim()}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-40 transition-all hover:opacity-90 flex-shrink-0"
-              style={{ backgroundColor: '#4f46e5' }}
+              className="btn-primary px-3 py-1.5 text-xs flex-shrink-0"
+              style={{ opacity: !customSource.trim() ? 0.4 : 1 }}
             >
               Generate URL
             </button>
           </div>
 
           {showGenerated && customSource.trim() && (
-            <div className="flex items-center gap-3 bg-slate-900 rounded-xl px-4 py-3">
-              <code className="text-xs font-mono text-emerald-400 flex-1 break-all select-all">{url}</code>
+            <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: '#111827' }}>
+              <code className="text-xs font-mono flex-1 break-all select-all" style={{ color: '#86efac' }}>{url}</code>
               <CopyButton text={url} />
             </div>
           )}
@@ -211,16 +214,16 @@ function WebhookCard({ wh, apiKey }) {
       )}
 
       {/* Payload + response */}
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-        <div className="p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Request Body</p>
-          <pre className="text-xs font-mono text-gray-700 bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre leading-relaxed">
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ borderTop: '1px solid #f3f4f6' }}>
+        <div className="p-4" style={{ borderRight: '1px solid #f3f4f6' }}>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>Request Body</p>
+          <pre className="text-xs font-mono rounded-lg p-3 overflow-x-auto whitespace-pre leading-relaxed" style={{ background: '#fafafa', color: 'var(--text-primary)' }}>
             {JSON.stringify(displayPayload, null, 2)}
           </pre>
         </div>
         <div className="p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Response</p>
-          <pre className="text-xs font-mono text-gray-700 bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre leading-relaxed">
+          <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>Response</p>
+          <pre className="text-xs font-mono rounded-lg p-3 overflow-x-auto whitespace-pre leading-relaxed" style={{ background: '#fafafa', color: 'var(--text-primary)' }}>
             {JSON.stringify(wh.response, null, 2)}
           </pre>
           {testResult && (
@@ -235,9 +238,9 @@ function WebhookCard({ wh, apiKey }) {
       </div>
 
       {/* Header hint */}
-      <div className="px-5 py-3 border-t border-gray-100 bg-slate-50 flex items-center gap-2">
-        <span className="text-xs text-gray-500">Required header:</span>
-        <code className="text-xs font-mono bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-700">X-API-Key: &lt;your-api-key&gt;</code>
+      <div className="px-5 py-3 flex items-center gap-2" style={{ borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Required header:</span>
+        <code className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: '#ffffff', border: '1px solid #e5e7eb', color: 'var(--text-primary)' }}>X-API-Key: &lt;your-api-key&gt;</code>
       </div>
     </div>
   )
@@ -274,44 +277,44 @@ export default function WebhooksPage() {
     <div className="space-y-6 max-w-4xl">
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-          <Webhook size={20} className="text-indigo-600" />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(79,70,229,0.1)' }}>
+          <Webhook size={20} style={{ color: '#4f46e5' }} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Webhooks & API</h1>
-          <p className="text-sm text-gray-500">Integrate EduCRM with your website, forms, and tools</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Webhooks & API</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Integrate EduCRM with your website, forms, and tools</p>
         </div>
       </div>
 
       {/* API Key card */}
       <div className="card space-y-4">
-        <div>
-          <p className="text-sm font-semibold text-gray-800">API Key</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Send this as the <code className="font-mono bg-gray-100 px-1 rounded">X-API-Key</code> header with every webhook request.
-          </p>
-        </div>
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>API Key</h3>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)', marginTop: -10 }}>
+          Send this as the <code className="font-mono px-1 rounded" style={{ background: '#f3f4f6' }}>X-API-Key</code> header with every webhook request.
+        </p>
 
         {isLoading ? (
-          <div className="flex items-center gap-2 py-2"><Spinner size={4} /><span className="text-sm text-gray-400">Loading API key…</span></div>
+          <div className="flex items-center gap-2 py-2"><Spinner size={4} /><span className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading API key…</span></div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-              <code className="flex-1 text-sm font-mono text-gray-800 tracking-wider select-all">
+            <div className="flex-1 flex items-center gap-2 rounded-xl px-4 py-3" style={{ background: '#fafafa', border: '1px solid #e5e7eb' }}>
+              <code className="flex-1 text-sm font-mono tracking-wider select-all" style={{ color: 'var(--text-primary)' }}>
                 {showKey ? apiKey : maskedKey}
               </code>
             </div>
             <button
               onClick={() => setShowKey(v => !v)}
               title={showKey ? 'Hide' : 'Show'}
-              className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all"
+              className="p-2.5 rounded-xl transition-all"
+              style={{ border: '1px solid #e5e7eb', background: '#ffffff', color: 'var(--text-secondary)' }}
             >
               {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
             <button
               onClick={copyKey}
               title="Copy API key"
-              className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all"
+              className="p-2.5 rounded-xl transition-all"
+              style={{ border: '1px solid #e5e7eb', background: '#ffffff', color: 'var(--text-secondary)' }}
             >
               <Copy size={16} />
             </button>
@@ -319,19 +322,19 @@ export default function WebhooksPage() {
         )}
 
         {isFallback && (
-          <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-blue-700 leading-relaxed">
+          <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.2)', color: '#1d4ed8' }}>
             Using demo key <code className="font-mono font-semibold">{FALLBACK_KEY}</code> — the live API key endpoint is unavailable. Replace with your real key from Settings once the backend is reachable.
           </div>
         )}
 
-        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800 leading-relaxed">
+        <div className="rounded-xl px-4 py-3 text-xs leading-relaxed" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.25)', color: '#92400e' }}>
           <span className="font-semibold">Keep this secret.</span> Anyone with this key can create leads in your account. Never expose it in client-side JavaScript.
         </div>
       </div>
 
       {/* Webhook cards */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Webhook Endpoints</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Webhook Endpoints</h2>
         <div className="space-y-4">
           {WEBHOOKS.map(wh => (
             <WebhookCard key={wh.id} wh={wh} apiKey={apiKey} />
@@ -341,8 +344,8 @@ export default function WebhooksPage() {
 
       {/* Quick-start snippet */}
       <div className="card">
-        <p className="text-sm font-semibold text-gray-800 mb-3">Quick Start — cURL</p>
-        <pre className="text-xs font-mono bg-slate-900 text-slate-200 rounded-xl p-4 overflow-x-auto leading-relaxed">
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 14px' }}>Quick Start — cURL</h3>
+        <pre className="text-xs font-mono rounded-xl p-4 overflow-x-auto leading-relaxed" style={{ background: '#111827', color: '#e2e8f0' }}>
 {`curl -X POST ${WH_BASE}/lead \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
